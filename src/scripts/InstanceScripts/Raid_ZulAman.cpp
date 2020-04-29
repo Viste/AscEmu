@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (c) 2008-2015 Sun++ Team <http://www.sunplusplus.info>
  * Copyright (c) 2007-2015 Moon++ Team <http://www.moonplusplus.info>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
@@ -266,8 +266,8 @@ class HalazziAI : public CreatureAIScript
     {
         CurrentHealth = getCreature()->getHealth();
         _setDisplayId(24144);
-        getCreature()->setHealth(240000);
         getCreature()->setMaxHealth(240000);
+        getCreature()->setHealth(240000);
 
         mLynx = spawnCreature(CN_LYNX_SPIRIT, getCreature()->GetPosition());
         if (mLynx)
@@ -288,10 +288,10 @@ class HalazziAI : public CreatureAIScript
             sendChatMessage(CHAT_MSG_MONSTER_YELL, 12022, "Spirit, come back to me!");
         }
 
-        if (CurrentHealth)
-            getCreature()->setHealth(CurrentHealth);
         if (MaxHealth)
             getCreature()->setMaxHealth(MaxHealth);
+        if (CurrentHealth)
+            getCreature()->setHealth(CurrentHealth);
         _setDisplayId(21632);
 
         SplitCount++;

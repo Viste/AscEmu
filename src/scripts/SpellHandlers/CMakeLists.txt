@@ -1,24 +1,16 @@
-# Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+# Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 
 project(SpellHandlers CXX)
 
+include(Scripts/CMakeLists.txt)
+include(LegacyFiles/CMakeLists.txt)
+
 #sources -contains source files for our library.
 set(sources
-    DeathKnightSpells.cpp
-    DruidSpells.cpp
-    HunterSpells.cpp
-    ItemSpells_1.cpp
-    MageSpells.cpp
-    PaladinSpells.cpp
-    PetAISpells.cpp
-    PriestSpells.cpp
-    QIspells.cpp
-    RogueSpells.cpp
+    ${SRC_SPELL_SCRIPTS_FILES}
+    ${SRC_SPELL_SCRIPTS_LEGACY_FILES}
+
     Setup.cpp
-    ShamanSpells.cpp
-    WarlockSpells.cpp
-    WarriorSpells.cpp
-    MiscSpells.cpp
     # Required for linker
     ../../world/Server/ServerState.cpp
     ../../world/Spell/SpellCastTargets.cpp

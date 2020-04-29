@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -370,8 +370,8 @@ bool TaxiMgr::GetGlobalTaxiNodeMask(uint32_t /*curloc*/, uint32_t* mask)
     {
         /*if (itr->second->from == curloc)
         {*/
-        auto field = static_cast<uint8_t>((taxiPath.second->m_to - 1) / 32);
-        if (field >= 12) // The DBC can contain negative TO values??? That'll be 255 here (because we store everything unsigned), skip them!
+        auto field = static_cast<uint32_t>((taxiPath.second->m_to - 1) / 32);
+        if (field >= DBC_TAXI_MASK_SIZE) // The DBC can contain negative TO values??? That'll be 255 here (because we store everything unsigned), skip them!
             continue;
         mask[field] |= 1 << ((taxiPath.second->m_to - 1) % 32);
         //}

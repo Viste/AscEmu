@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (c) 2007-2015 Moon++ Team <http://www.moonplusplus.info>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  *
@@ -164,7 +164,6 @@ LuaSpellEntry luaSpellVars[] =
     { "apply_on_shapeshift_change", 2, offsetof(SpellInfo, custom_apply_on_shapeshift_change) },
     { "is_melee_spell", 2, offsetof(SpellInfo, custom_is_melee_spell) },
     { "is_ranged_spell", 2, offsetof(SpellInfo, custom_is_ranged_spell) },
-    { "SchoolMask", 0, offsetof(SpellInfo, custom_SchoolMask) },
     { NULL, 0, 0 },
 };
 
@@ -286,16 +285,16 @@ namespace LuaSpell
         if (!sp || !sp->m_caster->IsInWorld())
             RET_NIL()
 
-            if (sp->m_targets.m_unitTarget)
+            if (sp->m_targets.getUnitTarget())
             {
-                PUSH_UNIT(L, sp->m_caster->GetMapMgr()->GetUnit(sp->m_targets.m_unitTarget));
+                PUSH_UNIT(L, sp->m_caster->GetMapMgr()->GetUnit(sp->m_targets.getUnitTarget()));
                 return 1;
             }
-            else if (sp->m_targets.m_itemTarget)
+            else if (sp->m_targets.getItemTarget())
             {
                 if (!sp->p_caster)
                     RET_NIL()
-                    PUSH_ITEM(L, sp->p_caster->getItemInterface()->GetItemByGUID(sp->m_targets.m_itemTarget));
+                    PUSH_ITEM(L, sp->p_caster->getItemInterface()->GetItemByGUID(sp->m_targets.getItemTarget()));
                 return 1;
             }
             else

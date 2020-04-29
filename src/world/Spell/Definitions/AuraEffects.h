@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -353,5 +353,5 @@ enum AuraEffect
     SPELL_AURA_368 = 368,
     SPELL_AURA_369 = 369,
     SPELL_AURA_370 = 370,
-    TOTAL_SPELL_AURAS = 371,
+    TOTAL_SPELL_AURAS
 };

@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -45,7 +45,7 @@ enum ChannelMemberFlags
     CHANNEL_MEMBER_FLAG_MIC_MUTED       = 0x20
 };
 
-enum ChannelNotifyFlags
+enum ChannelNotifyFlags : uint8_t
 {
     CHANNEL_NOTIFY_FLAG_JOINED          = 0x00,
     CHANNEL_NOTIFY_FLAG_LEFT            = 0x01,

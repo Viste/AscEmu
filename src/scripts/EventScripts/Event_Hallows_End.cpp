@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -221,7 +221,7 @@ public:
 
         if (!slotresult.Result)
         {
-            pPlayer->getItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_INVENTORY_FULL);
+            pPlayer->getItemInterface()->buildInventoryChangeError(NULL, NULL, INV_ERR_INVENTORY_FULL);
             return;
         }
         else
@@ -241,7 +241,7 @@ public:
             }
             else
             {
-                pPlayer->getItemInterface()->BuildInventoryChangeError(NULL, NULL, INV_ERR_INVENTORY_FULL);
+                pPlayer->getItemInterface()->buildInventoryChangeError(NULL, NULL, INV_ERR_INVENTORY_FULL);
                 return;
             }
         }

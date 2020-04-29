@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -434,7 +434,6 @@ class SERVER_DECL Aura : public EventableObject
         void EventPeriodicManaLeech(uint32);
         void EventPeriodicHealPct(float);
         void EventPeriodicManaPct(float);
-        void EventPeriodicRegenManaStatPct(uint32 perc, uint32 stat);
         void EventPeriodicTriggerDummy();
 
         void RelocateEvents();

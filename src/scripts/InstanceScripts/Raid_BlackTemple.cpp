@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -1088,7 +1088,7 @@ class ShadowmoonDeathshaperAI : public CreatureAIScript
         addAISpell(SHADOWMOON_DEATHSHAPER_RAISE_DEAD, 12.0f, TARGET_SELF, 2, 30);
         addAISpell(SHADOWMOON_DEATHSHAPER_SHADOW_BOLT, 75.0f, TARGET_ATTACKING, 3, 0);
 
-        getCreature()->setUInt32Value(UNIT_FIELD_POWER1, 100000);
+        getCreature()->setPower(POWER_TYPE_MANA, 100000);
     }
 
     void OnCombatStart(Unit* pTarget) override
@@ -4362,7 +4362,7 @@ class IllidanStormrageAI : public CreatureAIScript
                         getCreature()->GetAIInterface()->setNextTarget(pTrigger);
 
                         float Distance = pTrigger->CalcDistance(EyeBeamPaths[7 - FireWall].x, EyeBeamPaths[7 - FireWall].y, EyeBeamPaths[7 - FireWall].z);
-                        uint32 TimeToReach = (uint32)(Distance * 1000 / pTrigger->getSpeedForType(TYPE_WALK));
+                        uint32 TimeToReach = (uint32)(Distance * 1000 / pTrigger->getSpeedRate(TYPE_WALK, true));
                         EyeBeamTriggerAI* pEyeBeamTriggerAI = static_cast< EyeBeamTriggerAI* >(pTrigger->GetScript());
                         pEyeBeamTriggerAI->mPosition = FireWall;
                         pEyeBeamTriggerAI->despawn(TimeToReach + 1500, 0);

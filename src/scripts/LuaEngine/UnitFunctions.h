@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (c) 2007-2015 Moon++ Team <http://www.moonplusplus.info>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  *
@@ -1840,7 +1840,7 @@ public:
     {
         uint32 val = static_cast<uint32>(luaL_checkinteger(L, 1));
         if (ptr != nullptr)
-            ptr->setUInt32Value(UNIT_FIELD_POWER1, val);
+            ptr->setPower(POWER_TYPE_MANA, val);
         return 0;
     }
 
@@ -2258,7 +2258,7 @@ public:
     {
         float Speed = CHECK_FLOAT(L, 1);
         if (ptr && Speed)
-            ptr->setSpeedForType(TYPE_RUN, Speed);
+            ptr->setSpeedRate(TYPE_RUN, Speed, true);
         return 0;
     }
 
@@ -2266,7 +2266,7 @@ public:
     {
         float Speed = CHECK_FLOAT(L, 1);
         if (ptr && Speed)
-            ptr->setSpeedForType(TYPE_WALK, Speed);
+            ptr->setSpeedRate(TYPE_WALK, Speed, true);
         return 0;
     }
 
@@ -2274,7 +2274,7 @@ public:
     {
         float Speed = CHECK_FLOAT(L, 1);
         if (ptr && Speed)
-            ptr->setSpeedForType(TYPE_FLY, Speed);
+            ptr->setSpeedRate(TYPE_FLY, Speed, true);
         return 0;
     }
 
@@ -2563,7 +2563,7 @@ public:
         uint32 type = CHECK_ULONG(L, 4);
         if (!target || !spellid || !amount || !type || !ptr)
             return 0;
-        ptr->Energize(target, spellid, amount, type);
+        ptr->energize(target, spellid, amount, static_cast<PowerType>(type));
         return 0;
     }
 
@@ -2615,7 +2615,7 @@ public:
         else
             powertype = static_cast<uint16>(luaL_optinteger(L, 1, -1));
 
-        lua_pushnumber(L, static_cast<int>(ptr->getPower(powertype) * 100.0f / ptr->getMaxPower(powertype)));
+        lua_pushnumber(L, static_cast<int>(ptr->getPower(static_cast<PowerType>(powertype)) * 100.0f / ptr->getMaxPower(static_cast<PowerType>(powertype))));
         return 1;
     }
 
@@ -2642,7 +2642,7 @@ public:
         else
             powertype = static_cast<uint16>(luaL_optinteger(L, 1, -1));
 
-        lua_pushnumber(L, ptr->getPower(powertype));
+        lua_pushnumber(L, ptr->getPower(static_cast<PowerType>(powertype)));
         return 1;
     }
 
@@ -2669,7 +2669,7 @@ public:
         else
             powertype = static_cast<uint16>(luaL_optinteger(L, 1, -1));
 
-        lua_pushnumber(L, ptr->getMaxPower(powertype));
+        lua_pushnumber(L, ptr->getMaxPower(static_cast<PowerType>(powertype)));
         return 1;
     }
 
@@ -2709,7 +2709,7 @@ public:
         else
             powertype = static_cast<uint16>(luaL_optinteger(L, 2, -1));
 
-        ptr->setMaxPower(powertype, amount);
+        ptr->setMaxPower(static_cast<PowerType>(powertype), amount);
         return 0;
     }
 
@@ -2726,7 +2726,7 @@ public:
         else
             powertype = static_cast<uint32>(luaL_optinteger(L, 2, -1));
 
-        ptr->setPower(powertype, amount);
+        ptr->setPower(static_cast<PowerType>(powertype), amount);
         return 0;
     }
 
@@ -2743,7 +2743,7 @@ public:
         else
             powertype = static_cast<uint16>(luaL_optinteger(L, 2, -1));
 
-        ptr->setPower(powertype, static_cast<int>(amount / 100) * (ptr->getMaxPower(powertype)));
+        ptr->setPower(static_cast<PowerType>(powertype), static_cast<int>(amount / 100) * (ptr->getMaxPower(static_cast<PowerType>(powertype))));
         return 0;
     }
 
@@ -3627,10 +3627,10 @@ public:
         float Speed = CHECK_FLOAT(L, 1);
         if (Speed < 1 || Speed > 255)
             return 0;
-        plr->setSpeedForType(TYPE_RUN, Speed);
-        plr->setSpeedForType(TYPE_SWIM, Speed);
-        plr->setSpeedForType(TYPE_RUN_BACK, Speed / 2);
-        plr->setSpeedForType(TYPE_FLY, Speed * 2);
+        plr->setSpeedRate(TYPE_RUN, Speed, true);
+        plr->setSpeedRate(TYPE_SWIM, Speed, true);
+        plr->setSpeedRate(TYPE_RUN_BACK, Speed / 2, true);
+        plr->setSpeedRate(TYPE_FLY, Speed * 2, true);
         return 0;
     }
 
@@ -3720,11 +3720,7 @@ public:
         if (level <= worldConfig.player.playerLevelCap && level > 0)
         {
             if (ptr->isPlayer())
-            {
-                LevelInfo* Info = sObjectMgr.GetLevelInfo(ptr->getRace(), ptr->getClass(), level);
-                if (Info)
-                    static_cast<Player*>(ptr)->ApplyLevelInfo(Info, level);
-            }
+                static_cast<Player*>(ptr)->applyLevelInfo(level);
             else
                 ptr->setLevel(level);
         }
@@ -4224,7 +4220,7 @@ public:
     static int ResetAllTalents(lua_State* /*L*/, Unit* ptr)
     {
         TEST_PLAYER()
-            static_cast<Player*>(ptr)->Reset_AllTalents();
+            static_cast<Player*>(ptr)->resetAllTalents();
         return 0;
     }
 

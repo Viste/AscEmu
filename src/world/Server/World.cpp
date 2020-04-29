@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -628,7 +628,7 @@ void World::sendGlobalMessage(WorldPacket* worldPacket, WorldSession* sendToSelf
     for (auto activeSessions = mActiveSessionMapStore.begin(); activeSessions != mActiveSessionMapStore.end(); ++activeSessions)
     {
         if (activeSessions->second->GetPlayer() && activeSessions->second->GetPlayer()->IsInWorld()
-            && activeSessions->second != sendToSelf && (team == -1 || activeSessions->second->GetPlayer()->GetTeam() == team))
+            && activeSessions->second != sendToSelf && (team == -1 || activeSessions->second->GetPlayer()->GetTeam() == static_cast<uint32_t>(team)))
             activeSessions->second->SendPacket(worldPacket);
     }
 
@@ -782,7 +782,7 @@ bool World::setInitialWorldSettings()
 
     sChannelMgr.loadConfigSettings();
 
-    LogDetail("World : Starting CsBattlegroundManager...");
+    LogDetail("World : Starting BattlegroundManager...");
     sBattlegroundManager.initialize();
 
     dw = std::move(std::make_unique<DayWatcherThread>());

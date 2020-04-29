@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -42,9 +42,9 @@ void GuildBankEventLogEntry::saveGuildLogToDB() const
         (uint32_t)mDestTabId, mTimestamp);
 }
 
+#if VERSION_STRING >= Cata
 void GuildBankEventLogEntry::writeGuildLogPacket(WorldPacket& data, ByteBuffer& content) const
 {
-#if VERSION_STRING >= Cata
     ObjectGuid logGuid = MAKE_NEW_GUID(mPlayerGuid, 0, HIGHGUID_TYPE_PLAYER);
 
     bool hasItem = mEventType == GB_LOG_DEPOSIT_ITEM || mEventType == GB_LOG_WITHDRAW_ITEM ||
@@ -98,6 +98,8 @@ void GuildBankEventLogEntry::writeGuildLogPacket(WorldPacket& data, ByteBuffer& 
         content << uint8_t(mDestTabId);
     }
 #else
+void GuildBankEventLogEntry::writeGuildLogPacket(WorldPacket& data, ByteBuffer& /*content*/) const
+{
     data << uint8(mEventType);
     data << MAKE_NEW_GUID(mPlayerGuid, 0, HIGHGUID_TYPE_PLAYER);
 

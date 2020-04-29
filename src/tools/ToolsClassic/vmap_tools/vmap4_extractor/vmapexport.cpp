@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -54,7 +54,7 @@ typedef struct
 
 map_id * map_ids;
 uint16 *LiqType = 0;
-uint32 map_count;
+uint32_t map_count;
 char output_path[128]=".";
 char input_path[1024]=".";
 bool hasInputPathParam = false;
@@ -492,7 +492,7 @@ int main(int argc, char ** argv)
             printf("FATAL ERROR: Map.dbc not found in data file.\n");
             return 1;
         }
-        map_count=dbc->getRecordCount ();
+        map_count=static_cast<uint32_t>(dbc->getRecordCount());
         map_ids=new map_id[map_count];
         for (unsigned int x=0;x<map_count;++x)
         {

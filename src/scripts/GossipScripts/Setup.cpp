@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -22,15 +22,7 @@ extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)
     SetupDalaranGossip(mgr);
     SetupInnkeepers(mgr);
     SetupTrainerScript(mgr);
-    SetupMulgoreGossip(mgr);
-    SetupShattrathGossip(mgr);
-    SetupTanarisGossip(mgr);
     SetupMoongladeGossip(mgr);
-    SetupStormwindGossip(mgr);
-    SetupTheramoreGossip(mgr);
-    SetupTeldrassilGossip(mgr);
-    SetupBoreanTundraGossip(mgr);
-    SetupWyrmrestTempleGossip(mgr);
     SetupXpEliminatorGossip(mgr);
 }
 

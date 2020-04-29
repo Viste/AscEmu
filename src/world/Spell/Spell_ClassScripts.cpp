@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -84,7 +84,8 @@ public:
     {
         auto result = Spell::canCast(tolerate, parameter1, parameter2);
 
-        if (result == SPELL_CANCAST_OK)
+#if VERSION_STRING >= WotLK
+        if (result == SPELL_CAST_SUCCESS)
         {
             if (u_caster)
             {
@@ -118,6 +119,7 @@ public:
                 }
             }
         }
+#endif
         return result;
     }
 
@@ -149,7 +151,7 @@ public:
     uint32 AbsorbDamage(uint32 /*School*/, uint32* dmg)
     {
         // Checking for 1 min cooldown
-        if (dSpell == NULL || !p_target->Cooldown_CanCast(dSpell))
+        if (dSpell == NULL || p_target->hasSpellOnCooldown(dSpell))
             return 0;
 
         // Check for proc chance
@@ -179,8 +181,7 @@ public:
         p_target->castSpell(p_target->getGuid(), 45182, true);
 
         // Better to add custom cooldown procedure then fucking with entry, or not!!
-        //dSpell->setRecoveryTime(60000);
-        p_target->Cooldown_Add(dSpell, NULL);
+        p_target->addSpellCooldown(dSpell, nullptr, 60000);
 
         // Calc abs and applying it
         uint32 real_dmg = (cur_hlth > min_hlth ? cur_hlth - min_hlth : 0);
@@ -371,11 +372,11 @@ public:
     {
         auto result = Spell::canCast(tolerate, parameter1, parameter2);
 
-        if (result == SPELL_CANCAST_OK)
+        if (result == SPELL_CAST_SUCCESS)
         {
             if (m_caster != NULL && m_caster->IsInWorld())
             {
-                Unit* target = m_caster->GetMapMgr()->GetUnit(m_targets.m_unitTarget);
+                Unit* target = m_caster->GetMapMgr()->GetUnit(m_targets.getUnitTarget());
 
                 if (target == NULL || !(isAttackable(m_caster, target, false) || target->getRace() == RACE_UNDEAD))
                     result = SPELL_FAILED_BAD_TARGETS;

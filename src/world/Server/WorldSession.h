@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -28,9 +28,9 @@
 #include "Units/Unit.h"
 #include "Server/CharacterErrors.h"
 #include "Data/Flags.h"
+#include "Units/Players/PlayerDefines.hpp"
 #if VERSION_STRING >= Cata
     #include "Management/AddonMgr.h"
-    #include "Units/Players/PlayerDefines.hpp"
     #include "Units/Players/Player.h"
     struct AddonEntry;
 #endif
@@ -870,14 +870,11 @@ class SERVER_DECL WorldSession
 
         //////////////////////////////////////////////////////////////////////////////////////////
         // TradeHandler.cpp
-#if VERSION_STRING >= Cata
     public:
-        void sendTradeResult(TradeStatus result);
-        void sendTradeUpdate(bool trade_state = true);
-        void sendTradeCancel();
+        void sendTradeUpdate(bool tradeState = true);
+        void sendTradeResult(TradeStatus result, uint64_t guid = 0);
 
     protected:
-#endif
         void handleInitiateTradeOpcode(WorldPacket& recvPacket);
         void handleBeginTradeOpcode(WorldPacket& /*recvPacket*/);
         void handleBusyTrade(WorldPacket& /*recvPacket*/);

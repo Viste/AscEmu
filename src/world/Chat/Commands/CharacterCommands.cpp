@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -163,21 +163,7 @@ bool ChatHandler::HandleCharLevelUpCommand(const char* args, WorldSession* m_ses
         return true;
     }
 
-    player_target->ApplyLevelInfo(level_info, levels);
-
-    if (player_target->getClass() == WARLOCK)
-    {
-        std::list<Pet*> summons = player_target->GetSummons();
-        for (std::list<Pet*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
-        {
-            if ((*itr)->IsInWorld() && (*itr)->isAlive())
-            {
-                (*itr)->setLevel(levels);
-                (*itr)->ApplyStatsForLevel();
-                (*itr)->UpdateSpellList();
-            }
-        }
-    }
+    player_target->applyLevelInfo(levels);
 
     if (player_target != m_session->GetPlayer())
     {
@@ -1494,22 +1480,7 @@ bool ChatHandler::HandleCharSetLevelCommand(const char* args, WorldSession* m_se
         BlueSystemMessage(m_session, "You set your own level to %u.", new_level);
     }
 
-    player_target->ApplyLevelInfo(level_info, new_level);
-
-    if (player_target->getClass() == WARLOCK)
-    {
-        std::list<Pet*> player_summons = player_target->GetSummons();
-        for (std::list<Pet*>::iterator itr = player_summons.begin(); itr != player_summons.end(); ++itr)
-        {
-            Pet* single_summon = *itr;
-            if (single_summon->IsInWorld() && single_summon->isAlive())
-            {
-                single_summon->setLevel(new_level);
-                single_summon->ApplyStatsForLevel();
-                single_summon->UpdateSpellList();
-            }
-        }
-    }
+    player_target->applyLevelInfo(new_level);
 
     return true;
 }
@@ -1652,10 +1623,10 @@ bool ChatHandler::HandleCharSetSpeedCommand(const char* args, WorldSession* m_se
         BlueSystemMessage(m_session, "Setting your speed to %3.2f.", speed);
     }
 
-    player_target->setSpeedForType(TYPE_RUN, speed);
-    player_target->setSpeedForType(TYPE_SWIM, speed);
-    player_target->setSpeedForType(TYPE_RUN_BACK, speed / 2);
-    player_target->setSpeedForType(TYPE_FLY, speed * 2);
+    player_target->setSpeedRate(TYPE_RUN, speed, true);
+    player_target->setSpeedRate(TYPE_SWIM, speed, true);
+    player_target->setSpeedRate(TYPE_RUN_BACK, speed / 2, true);
+    player_target->setSpeedRate(TYPE_FLY, speed * 2, true);
 
     return true;
 }

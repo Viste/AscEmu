@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -156,7 +156,6 @@ Creature::Creature(uint64 guid)
     spawnid = 0;
 
     m_H_regenTimer = 0;
-    m_P_regenTimer = 0;
     m_useAI = true;
     mTaxiNode = 0;
 
@@ -615,17 +614,17 @@ public:
 
     void onHello(Object* object, Player* player) override
     {
-        sObjectMgr.createGuardGossipMenuForPlayer(object->getGuid(), m_gossipMenuId, player);
+        sObjectMgr.generateDatabaseGossipMenu(object, m_gossipMenuId, player);
     }
 
-    void onSelectOption(Object* object, Player* player, uint32_t intId, const char* /*Code*/, uint32_t gossipId) override
+    void onSelectOption(Object* object, Player* player, uint32_t gossipItemId, const char* /*Code*/, uint32_t gossipMenuId) override
     {
-        if (intId > 0)
+        if (gossipItemId > 0)
         {
-            if (gossipId != 0)
-                sObjectMgr.createGuardGossipOptionAndSubMenu(object->getGuid(), player, intId, gossipId);
+            if (gossipMenuId != 0)
+                sObjectMgr.generateDatabaseGossipOptionAndSubMenu(object, player, gossipItemId, gossipMenuId);
             else
-                sObjectMgr.createGuardGossipOptionAndSubMenu(object->getGuid(), player, intId, m_gossipMenuId);
+                sObjectMgr.generateDatabaseGossipOptionAndSubMenu(object, player, gossipItemId, m_gossipMenuId);
         }
     }
 };
@@ -857,7 +856,7 @@ void Creature::RemoveFromWorld(bool free_guid)
 
 void Creature::EnslaveExpire()
 {
-    m_enslaveCount++;
+    ++m_enslaveCount;
 
     uint64 charmer = getCharmedByGuid();
 
@@ -877,7 +876,7 @@ void Creature::EnslaveExpire()
     setCharmedByGuid(0);
     setSummonedByGuid(0);
 
-    resetCurrentSpeed();
+    resetCurrentSpeeds();
 
     switch (GetCreatureProperties()->Type)
     {
@@ -1115,44 +1114,6 @@ void Creature::RegenerateHealth()
     setHealth((cur >= mh) ? mh : cur);
 }
 
-void Creature::RegenerateMana()
-{
-    float amt;
-    if (m_interruptRegen)
-        return;
-
-    uint32 cur = getPower(POWER_TYPE_MANA);
-    uint32 mm = getMaxPower(POWER_TYPE_MANA);
-    if (cur >= mm)return;
-    amt = (getLevel() + 10) * PctPowerRegenModifier[POWER_TYPE_MANA];
-
-
-    amt *= worldConfig.getFloatRate(RATE_POWER1);
-    if (amt <= 1.0)  //this fixes regen like 0.98
-        cur++;
-    else
-        cur += (uint32)amt;
-
-    if (cur >= mm)
-        setPower(POWER_TYPE_MANA, mm);
-    else
-        setPower(POWER_TYPE_MANA, cur);
-}
-
-void Creature::RegenerateFocus()
-{
-    if (m_interruptRegen)
-        return;
-
-    uint32 cur = getPower(POWER_TYPE_FOCUS);
-    uint32 mm = getMaxPower(POWER_TYPE_FOCUS);
-    if (cur >= mm)return;
-    float regenrate = worldConfig.getFloatRate(RATE_POWER3);
-    float amt = 25.0f * PctPowerRegenModifier[POWER_TYPE_FOCUS] * regenrate;
-    cur += (uint32)amt;
-    setPower(POWER_TYPE_FOCUS, (cur >= mm) ? mm : cur);
-}
-
 void Creature::CallScriptUpdate()
 {
     ARCEMU_ASSERT(_myScriptClass != NULL);
@@ -1337,10 +1298,10 @@ bool Creature::Load(MySQLStructure::CreatureSpawn* spawn, uint8 mode, MySQLStruc
     spawnid = spawn->id;
     m_phase = spawn->phase;
 
-    setSpeedForType(TYPE_WALK, creature_properties->walk_speed, true);
-    setSpeedForType(TYPE_RUN, creature_properties->run_speed, true);
-    setSpeedForType(TYPE_FLY, creature_properties->fly_speed, true);
-    resetCurrentSpeed();
+    setSpeedRate(TYPE_WALK, creature_properties->walk_speed, false);
+    setSpeedRate(TYPE_RUN, creature_properties->run_speed, false);
+    setSpeedRate(TYPE_FLY, creature_properties->fly_speed, false);
+    resetCurrentSpeeds();
 
     //Set fields
     setEntry(creature_properties->Id);
@@ -1361,8 +1322,8 @@ bool Creature::Load(MySQLStructure::CreatureSpawn* spawn, uint8 mode, MySQLStruc
         health = creature_properties->MinHealth + Util::getRandomUInt(creature_properties->MaxHealth - creature_properties->MinHealth);
     }
 
-    setHealth(health);
     setMaxHealth(health);
+    setHealth(health);
     setBaseHealth(health);
 
     setMaxPower(POWER_TYPE_MANA, creature_properties->Mana);
@@ -1606,10 +1567,10 @@ void Creature::Load(CreatureProperties const* properties_, float x, float y, flo
         GetAIInterface()->setAiScriptType(AI_SCRIPT_PASSIVE);
     }
 
-    setSpeedForType(TYPE_WALK, creature_properties->walk_speed, true);
-    setSpeedForType(TYPE_RUN, creature_properties->run_speed, true);
-    setSpeedForType(TYPE_FLY, creature_properties->fly_speed, true);
-    resetCurrentSpeed();
+    setSpeedRate(TYPE_WALK, creature_properties->walk_speed, false);
+    setSpeedRate(TYPE_RUN, creature_properties->run_speed, false);
+    setSpeedRate(TYPE_FLY, creature_properties->fly_speed, false);
+    resetCurrentSpeeds();
 
     //Set fields
     setEntry(creature_properties->Id);
@@ -1621,8 +1582,8 @@ void Creature::Load(CreatureProperties const* properties_, float x, float y, flo
 
     uint32 health = creature_properties->MinHealth + Util::getRandomUInt(creature_properties->MaxHealth - creature_properties->MinHealth);
 
-    setHealth(health);
     setMaxHealth(health);
+    setHealth(health);
     setBaseHealth(health);
 
     setMaxPower(POWER_TYPE_MANA, creature_properties->Mana);
@@ -2418,7 +2379,7 @@ void Creature::Die(Unit* pAttacker, uint32 /*damage*/, uint32 spellid)
             for (uint8_t i = 0; i < CURRENT_SPELL_MAX; ++i)
             {
                 Spell* curSpell = attacker->getCurrentSpell(CurrentSpellType(i));
-                if (curSpell != nullptr && curSpell->m_targets.m_unitTarget == getGuid())
+                if (curSpell != nullptr && curSpell->m_targets.getUnitTarget() == getGuid())
                     attacker->interruptSpellWithSpellType(CurrentSpellType(i));
             }
         }

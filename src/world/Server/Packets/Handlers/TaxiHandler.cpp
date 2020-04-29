@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -20,7 +20,7 @@ using namespace AscEmu::Packets;
 
 void WorldSession::sendTaxiList(Creature* creature)
 {
-    uint32_t tmpTaxiNodeMask[12];
+    uint32_t tmpTaxiNodeMask[DBC_TAXI_MASK_SIZE];
 
     uint32_t nearestNode = sTaxiMgr.getNearestNodeForPlayer(_player);
     if (nearestNode == 0)
@@ -44,11 +44,11 @@ void WorldSession::sendTaxiList(Creature* creature)
 
     if (!_player->m_cheats.TaxiCheat)
     {
-        for (uint8_t i = 0; i < 12; ++i)
+        for (uint32_t i = 0; i < DBC_TAXI_MASK_SIZE; ++i)
             tmpTaxiNodeMask[i] &= _player->GetTaximask(i);
     }
 
-    std::array<uint32_t, 12> taxiMask{};
+    std::array<uint32_t, DBC_TAXI_MASK_SIZE> taxiMask{};
     std::copy(std::begin(tmpTaxiNodeMask), std::end(tmpTaxiNodeMask), std::begin(taxiMask));
 
     SendPacket(SmsgShowTaxiNodes(creature->getGuid(), nearestNode, taxiMask).serialise().get());

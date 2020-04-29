@@ -1,6 +1,6 @@
 /*
 * AscEmu Framework based on ArcEmu MMORPG Server
-* Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+* Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
 * Copyright (C) 2005-2007 Ascent Team
 *
@@ -180,6 +180,12 @@ class SERVER_DECL ScriptMgr
         ScriptMgr& operator=(ScriptMgr const&) = delete;
 
         SpellCastResult callScriptedSpellCanCast(Spell* spell, uint32_t* parameter1, uint32_t* parameter2) const;
+        void callScriptedSpellAtStartCasting(Spell* spell);
+        void callScriptedSpellFilterTargets(Spell* spell, uint8_t effectIndex, std::vector<uint64_t>* effectTargets);
+        void callScriptedSpellBeforeHit(Spell* spell, uint8_t effectIndex);
+        void callScriptedSpellAfterMiss(Spell* spell, Unit* unitTarget);
+        SpellScriptExecuteState callScriptedSpellBeforeSpellEffect(Spell* /*spell*/, uint32_t /*effectType*/, uint8_t /*effectId*/) const;
+        void callScriptedSpellAfterSpellEffect(Spell* /*spell*/, uint32_t /*effectType*/, uint8_t /*effectId*/);
         void register_spell_script(uint32_t spellId, SpellScript* ss);
 
         // MIT End

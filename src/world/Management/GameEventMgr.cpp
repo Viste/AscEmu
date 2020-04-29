@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -67,7 +67,7 @@ void GameEventMgr::LoadFromDB()
         if (!result)
         {
             //mGameEvent.clear();
-            LOG_ERROR("event_properties can not be read or does not include any version specific events!");
+            LogError("GameEventMgr : event_properties can not be read or does not include any version specific events!");
             return;
         }
 

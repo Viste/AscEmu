@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -49,7 +49,49 @@
 #define DANCINGRUNEWEAPON       27893
 
 //MIT START
+//////////////////////////////////////////////////////////////////////////////////////////
+// Owner
 Player* Pet::getPlayerOwner() { return m_Owner; }
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Misc
+void Pet::giveXp(uint32_t xp)
+{
+    auto newXP = xp + getPetExperience();
+    auto nextLevelXp = getPetNextLevelExperience();
+    auto petLevel = getLevel();
+
+    // Check if pet levels up
+    auto levelUp = false;
+    while (newXP >= nextLevelXp && newXP > 0)
+    {
+        // Check owner's level
+        if (m_Owner->getLevel() <= petLevel)
+        {
+            // Pet is at the same level as owner, do not level up
+            newXP = nextLevelXp - 1;
+            break;
+        }
+
+        levelUp = true;
+        ++petLevel;
+
+        newXP -= nextLevelXp;
+        nextLevelXp = GetNextLevelXP(petLevel);
+        setPetNextLevelExperience(nextLevelXp);
+    }
+
+    if (levelUp)
+    {
+        setLevel(petLevel);
+        setPetTalentPoints(GetTPsForLevel(getLevel()) - GetSpentTPs());
+        ApplyStatsForLevel();
+        UpdateSpellList();
+        SendTalentsToOwner();
+    }
+
+    setPetExperience(newXP);
+}
 
 //MIT END
 
@@ -499,11 +541,7 @@ bool Pet::CreateAsSummon(uint32 entry, CreatureProperties const* ci, Creature* c
     BaseRangedDamage[0] = 0;
     BaseRangedDamage[1] = 0;
 
-    setSpeedForType(TYPE_WALK, owner->getSpeedForType(TYPE_WALK, true), true);
-    setSpeedForType(TYPE_RUN, owner->getSpeedForType(TYPE_RUN, true), true);
-    setSpeedForType(TYPE_FLY, owner->getSpeedForType(TYPE_FLY, true), true);
-    resetCurrentSpeed();
-
+    resetCurrentSpeeds();
     ApplyStatsForLevel();
 
     m_ExpireTime = expiretime;
@@ -950,10 +988,7 @@ void Pet::LoadFromDB(Player* owner, PlayerPet* pi)
     BaseRangedDamage[0] = 0;
     BaseRangedDamage[1] = 0;
 
-    setSpeedForType(TYPE_WALK, owner->getSpeedForType(TYPE_WALK, true), true);
-    setSpeedForType(TYPE_RUN, owner->getSpeedForType(TYPE_RUN, true), true);
-    setSpeedForType(TYPE_FLY, owner->getSpeedForType(TYPE_FLY, true), true);
-    resetCurrentSpeed();
+    resetCurrentSpeeds();
 
     setLevel(mPi->level);
 
@@ -1259,26 +1294,6 @@ bool Pet::CanGainXP()
         return false;
 
     return true;
-}
-
-void Pet::GiveXP(uint32 xp)
-{
-    xp += getPetExperience();
-    uint32 nxp = getPetNextLevelExperience();
-
-    if (xp >= nxp)
-    {
-        setPetTalentPoints(GetTPsForLevel(getLevel() + 1) - GetSpentTPs());
-        setLevel(1);
-        xp -= nxp;
-        nxp = GetNextLevelXP(getLevel());
-        setPetNextLevelExperience(nxp);
-        ApplyStatsForLevel();
-        UpdateSpellList();
-        SendTalentsToOwner();
-    }
-
-    setPetExperience(xp);
 }
 
 uint32 Pet::GetNextLevelXP(uint32 level)
@@ -1949,7 +1964,7 @@ uint32 Pet::CanLearnSpell(SpellInfo const* sp)
 HappinessState Pet::GetHappinessState()
 {
     //gets happiness state from happiness points
-    uint32 pts = getUInt32Value(UNIT_FIELD_POWER5);
+    auto pts = getPower(POWER_TYPE_HAPPINESS);
     if (pts < PET_HAPPINESS_UPDATE_VALUE)
         return UNHAPPY;
 
@@ -1974,7 +1989,7 @@ AI_Spell* Pet::HandleAutoCastEvent()
         if ((*itr)->autocast_type == AUTOCAST_EVENT_ATTACK)
         {
             // spells still spammed, I think the cooldowntime is being set incorrectly somewhere else
-            if (chance && (*itr)->spell &&Util::getMSTime() >= (*itr)->cooldowntime && getPower(static_cast<uint16_t>((*itr)->spell->getPowerType())) >= (*itr)->spell->getManaCost())
+            if (chance && (*itr)->spell &&Util::getMSTime() >= (*itr)->cooldowntime && getPower((*itr)->spell->getPowerType()) >= (*itr)->spell->getManaCost())
             {
                 return *itr;
             }
@@ -2298,7 +2313,7 @@ void Pet::DealDamage(Unit* pVictim, uint32 damage, uint32 /*targetEvent*/, uint3
                                 xp = CalculateXpToGive(pVictim, player_tagger->GetSummon());
 
                                 if (xp > 0)
-                                    player_tagger->GetSummon()->GiveXP(xp);
+                                    player_tagger->GetSummon()->giveXp(xp);
                             }
                         }
                         //////////////////////////////////////////////////////////////////////////////////////////
@@ -2423,7 +2438,7 @@ void Pet::Die(Unit* pAttacker, uint32 /*damage*/, uint32 spellid)
             for (uint8_t i = 0; i < CURRENT_SPELL_MAX; ++i)
             {
                 Spell* curSpell = attacker->getCurrentSpell(CurrentSpellType(i));
-                if (curSpell != nullptr && curSpell->m_targets.m_unitTarget == getGuid())
+                if (curSpell != nullptr && curSpell->m_targets.getUnitTarget() == getGuid())
                     attacker->interruptSpellWithSpellType(CurrentSpellType(i));
             }
         }

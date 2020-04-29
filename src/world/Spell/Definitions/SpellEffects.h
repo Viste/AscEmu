@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -190,5 +190,5 @@ enum SpellEffect
     SPELL_EFFECT_UNKNOWN_180,               //    180
     SPELL_EFFECT_UNKNOWN_181,               //    181
     SPELL_EFFECT_UNKNOWN_182,               //    182
-    TOTAL_SPELL_EFFECTS,                    //    183
+    TOTAL_SPELL_EFFECTS                     //    183
 };

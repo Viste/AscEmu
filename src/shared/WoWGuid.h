@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -228,7 +228,7 @@ class SERVER_DECL WoWGuid
             uint32_t highGuid = *(reinterpret_cast<const uint32_t*>(&guid) + 1);
             return highGuid;
         }
-        
+
         HighGuid getHigh() const { return static_cast<HighGuid>(getGuidHighPart()); }
 
         static uint64_t createPetGuid(uint32_t entry, uint32_t lowGuid)

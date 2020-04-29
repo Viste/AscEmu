@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -114,7 +114,7 @@ void TotemSummon::SetupSpells()
         if (!totemSpell->hasEffect(SPELL_AURA_PERIODIC_TRIGGER_SPELL))
         {
             targets.setDestination(GetPosition());
-            targets.m_targetMask = TARGET_FLAG_DEST_LOCATION;
+            targets.setTargetMask(TARGET_FLAG_DEST_LOCATION);
         }
         spell->prepare(&targets);
 

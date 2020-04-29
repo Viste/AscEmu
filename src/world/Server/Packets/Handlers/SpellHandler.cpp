@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -179,9 +179,9 @@ void WorldSession::handleCastSpellOpcode(WorldPacket& recvPacket)
         uint8_t hasMovementData; // 1 or 0
         recvPacket >> projectilePitch >> projectileSpeed >> hasMovementData;
 
-        LocationVector const spellDestination = targets.destination();
-        LocationVector const spellSource = targets.source();
-        float const deltaX = spellDestination.x - spellSource.y; // Calculate change of x position
+        LocationVector const spellDestination = targets.getDestination();
+        LocationVector const spellSource = targets.getSource();
+        float const deltaX = spellDestination.x - spellSource.x; // Calculate change of x position
         float const deltaY = spellDestination.y - spellSource.y; // Calculate change of y position
 
         uint32_t travelTime = 0;
@@ -404,9 +404,9 @@ void WorldSession::handlePetCastSpell(WorldPacket& recvPacket)
         uint8_t hasMovementData; // 1 or 0
         recvPacket >> projectilePitch >> projectileSpeed >> hasMovementData;
 
-        LocationVector const spellDestination = targets.destination();
-        LocationVector const spellSource = targets.source();
-        float const deltaX = spellDestination.x - spellSource.y; // Calculate change of x position
+        LocationVector const spellDestination = targets.getDestination();
+        LocationVector const spellSource = targets.getSource();
+        float const deltaX = spellDestination.x - spellSource.x; // Calculate change of x position
         float const deltaY = spellDestination.y - spellSource.y; // Calculate change of y position
 
         uint32_t travelTime = 0;

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -795,14 +795,14 @@ void WorldSession::handleCharterBuy(WorldPacket& recvPacket)
         const SlotResult slotResult = _player->getItemInterface()->FindFreeInventorySlot(itemProperties);
         if (slotResult.Result == 0)
         {
-            _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, INV_ERR_INVENTORY_FULL);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, INV_ERR_INVENTORY_FULL);
             return;
         }
 
         const uint8_t error = _player->getItemInterface()->CanReceiveItem(itemProperties, 1);
         if (error)
         {
-            _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, error);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, error, item_ids[arena_type]);
         }
         else
         {
@@ -842,7 +842,7 @@ void WorldSession::handleCharterBuy(WorldPacket& recvPacket)
     {
         if (!_player->hasEnoughCoinage(worldConfig.guild.charterCost))
         {
-            _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, INV_ERR_NOT_ENOUGH_MONEY);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, INV_ERR_NOT_ENOUGH_MONEY);
             return;
         }
 
@@ -867,14 +867,14 @@ void WorldSession::handleCharterBuy(WorldPacket& recvPacket)
         const SlotResult slotResult = _player->getItemInterface()->FindFreeInventorySlot(itemProperties);
         if (slotResult.Result == 0)
         {
-            _player->getItemInterface()->BuildInventoryChangeError(0, 0, INV_ERR_INVENTORY_FULL);
+            _player->getItemInterface()->buildInventoryChangeError(0, 0, INV_ERR_INVENTORY_FULL);
             return;
         }
 
         const uint8_t error = _player->getItemInterface()->CanReceiveItem(sMySQLStore.getItemProperties(CharterEntry::Guild), 1);
         if (error)
         {
-            _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, error);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, error, CharterEntry::Guild);
         }
         else
         {

@@ -1,11 +1,11 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
 #pragma once
 
-enum SpellDidHitResult
+enum SpellDidHitResult : uint8_t
 {
     SPELL_DID_HIT_SUCCESS = 0,
     SPELL_DID_HIT_MISS    = 1,

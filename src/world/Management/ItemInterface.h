@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -80,6 +80,10 @@ class SERVER_DECL ItemInterface
         // MIT Start
 
         bool hasItemForTotemCategory(uint32_t totemCategory);
+        bool isItemInTradeWindow(Item const* item) const;
+
+        // Inventory error report
+        void buildInventoryChangeError(Item const* srcItem, Item const* dstItem, uint8_t inventoryError, uint32_t srcItemId = 0);
 
         // MIT End
         // APGL Start
@@ -147,7 +151,6 @@ class SERVER_DECL ItemInterface
         int8 GetItemSlotByType(uint32 type);
         Item* GetItemByGUID(uint64 itemGuid);
 
-        void BuildInventoryChangeError(Item* SrcItem, Item* DstItem, uint8 Error);
         void SwapItemSlots(int8 srcslot, int8 dstslot);
 
         uint8 GetInternalBankSlotFromPlayer(int8 islot);         // converts inventory slots into 0-x numbers

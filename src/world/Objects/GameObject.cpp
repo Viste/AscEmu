@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -874,10 +874,9 @@ void GameObject_Chest::onUse(Player* player)
             CastSpell(player->getGuid(), spell);
 
         //open chest spell?
-        SpellCastTargets targets;
+        SpellCastTargets targets(getGuid());
         auto spellInfo = sSpellMgr.getSpellInfo(11437);
         auto spellOpen = sSpellMgr.newSpell(player, spellInfo, true, nullptr);
-        targets.m_unitTarget = getGuid();
         spellOpen->prepare(&targets);
     }
     else
@@ -1242,12 +1241,12 @@ void GameObject_FishingNode::onUse(Player* player)
     {
         if (success)
         {
-            channelledSpell->SendChannelUpdate(0);
+            channelledSpell->sendChannelUpdate(0);
             channelledSpell->finish(true);
         }
         else
         {
-            channelledSpell->SendChannelUpdate(0);
+            channelledSpell->sendChannelUpdate(0);
             channelledSpell->finish(false);
         }
     }
@@ -1366,7 +1365,7 @@ void GameObject_Ritual::onUse(Player* player)
                 return;
 
             spell = sSpellMgr.newSpell(player->GetMapMgr()->GetPlayer(GetRitual()->GetCasterGUID()), info, true, nullptr);
-            targets.m_unitTarget = target->getGuid();
+            targets.setUnitTarget(target->getGuid());
             spell->prepare(&targets);
         }
         else if (gameobject_properties->entry == 177193)    // doom portal
@@ -1384,15 +1383,14 @@ void GameObject_Ritual::onUse(Player* player)
                 return;
 
             spell = sSpellMgr.newSpell(psacrifice, info, true, nullptr);
-            targets.m_unitTarget = psacrifice->getGuid();
+            targets.setUnitTarget(psacrifice->getGuid());
             spell->prepare(&targets);
 
             // summons demon
             info = sSpellMgr.getSpellInfo(gameobject_properties->summoning_ritual.spell_id);
             spell = sSpellMgr.newSpell(pCaster, info, true, nullptr);
 
-            SpellCastTargets targets2;
-            targets2.m_unitTarget = pCaster->getGuid();
+            SpellCastTargets targets2(pCaster->getGuid());
             spell->prepare(&targets2);
         }
         else if (gameobject_properties->entry == 179944)    // Summoning portal for meeting stones

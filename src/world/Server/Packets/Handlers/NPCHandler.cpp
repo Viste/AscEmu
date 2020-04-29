@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -663,8 +663,7 @@ void WorldSession::handleSpiritHealerActivateOpcode(WorldPacket& /*recvPacket*/)
         if (aura == nullptr)
         {
             const auto spellInfo = sSpellMgr.getSpellInfo(15007);
-            SpellCastTargets targets;
-            targets.m_unitTarget = _player->getGuid();
+            SpellCastTargets targets(_player->getGuid());
             const auto spell = sSpellMgr.newSpell(_player, spellInfo, true, nullptr);
             spell->prepare(&targets);
         }

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -350,32 +350,27 @@ void WorldSession::handleSetActionButtonOpcode(WorldPacket& recvPacket)
     if (srlPacket.action == 0)
     {
         LogDebugFlag(LF_OPCODE, "MISC: Remove action from button %u", srlPacket.button);
-        _player->setAction(srlPacket.button, 0, 0, 0);
+        _player->setActionButton(srlPacket.button, 0, 0, 0);
     }
     else
     {
-#if VERSION_STRING > TBC
         if (srlPacket.button >= PLAYER_ACTION_BUTTON_COUNT)
             return;
-#else
-        if (srlPacket.button >= 120)
-            return;
-#endif
 
         if (srlPacket.type == 64 || srlPacket.type == 65)
         {
             LogDebugFlag(LF_OPCODE, "MISC: Added Macro %u into button %u", srlPacket.action, srlPacket.button);
-            _player->setAction(srlPacket.button, srlPacket.action, srlPacket.type, srlPacket.misc);
+            _player->setActionButton(srlPacket.button, srlPacket.action, srlPacket.type, srlPacket.misc);
         }
         else if (srlPacket.type == 128)
         {
             LogDebugFlag(LF_OPCODE, "MISC: Added Item %u into button %u", srlPacket.action, srlPacket.button);
-            _player->setAction(srlPacket.button, srlPacket.action, srlPacket.type, srlPacket.misc);
+            _player->setActionButton(srlPacket.button, srlPacket.action, srlPacket.type, srlPacket.misc);
         }
         else if (srlPacket.type == 0)
         {
             LogDebugFlag(LF_OPCODE, "MISC: Added Spell %u into button %u", srlPacket.action, srlPacket.button);
-            _player->setAction(srlPacket.button, srlPacket.action, srlPacket.type, srlPacket.misc);
+            _player->setActionButton(srlPacket.button, srlPacket.action, srlPacket.type, srlPacket.misc);
         }
     }
 }
@@ -623,13 +618,13 @@ void WorldSession::handleOpenItemOpcode(WorldPacket& recvPacket)
                 }
                 else
                 {
-                    _player->getItemInterface()->BuildInventoryChangeError(item, nullptr, INV_ERR_ITEM_LOCKED);
+                    _player->getItemInterface()->buildInventoryChangeError(item, nullptr, INV_ERR_ITEM_LOCKED);
                     return;
                 }
             }
             else if (lockEntry->locktype[lockCase] == 2 && item->locked)
             {
-                _player->getItemInterface()->BuildInventoryChangeError(item, nullptr, INV_ERR_ITEM_LOCKED);
+                _player->getItemInterface()->buildInventoryChangeError(item, nullptr, INV_ERR_ITEM_LOCKED);
                 return;
             }
         }
@@ -746,8 +741,7 @@ void WorldSession::handleSelfResurrect(WorldPacket& /*recvPacket*/)
         const auto spellInfo = sSpellMgr.getSpellInfo(resurrectSpell);
         if (const auto spell = sSpellMgr.newSpell(_player, spellInfo, true, nullptr))
         {
-            SpellCastTargets spellCastTargets;
-            spellCastTargets.m_unitTarget = _player->getGuid();
+            SpellCastTargets spellCastTargets(_player->getGuid());
             spell->prepare(&spellCastTargets);
         }
     }
@@ -1564,7 +1558,7 @@ void WorldSession::handleAmmoSetOpcode(WorldPacket& recvPacket)
     {
         if (_player->getLevel() < itemProperties->RequiredLevel)
         {
-            _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, INV_ERR_ITEM_RANK_NOT_ENOUGH);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, INV_ERR_ITEM_RANK_NOT_ENOUGH);
 #if VERSION_STRING < Cata
             _player->setAmmoId(0);
 #endif
@@ -1576,7 +1570,7 @@ void WorldSession::handleAmmoSetOpcode(WorldPacket& recvPacket)
     {
         if (!_player->_HasSkillLine(itemProperties->RequiredSkill))
         {
-            _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, INV_ERR_ITEM_RANK_NOT_ENOUGH);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, INV_ERR_ITEM_RANK_NOT_ENOUGH);
 #if VERSION_STRING < Cata
             _player->setAmmoId(0);
 #endif
@@ -1588,7 +1582,7 @@ void WorldSession::handleAmmoSetOpcode(WorldPacket& recvPacket)
         {
             if (_player->_GetSkillLineCurrent(itemProperties->RequiredSkill, false) < itemProperties->RequiredSkillRank)
             {
-                _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, INV_ERR_ITEM_RANK_NOT_ENOUGH);
+                _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, INV_ERR_ITEM_RANK_NOT_ENOUGH);
 #if VERSION_STRING < Cata
                 _player->setAmmoId(0);
 #endif
@@ -1608,7 +1602,7 @@ void WorldSession::handleAmmoSetOpcode(WorldPacket& recvPacket)
 #if VERSION_STRING > TBC
         case DEATHKNIGHT:
 #endif
-            _player->getItemInterface()->BuildInventoryChangeError(nullptr, nullptr, INV_ERR_YOU_CAN_NEVER_USE_THAT_ITEM);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, INV_ERR_YOU_CAN_NEVER_USE_THAT_ITEM);
 #if VERSION_STRING < Cata
             _player->setAmmoId(0);
 #endif

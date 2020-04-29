@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -27,8 +27,10 @@ enum WorldMapInfoFlag
     WMI_INSTANCE_ENABLED = 0x001,
     WMI_INSTANCE_WELCOME = 0x002,
     WMI_INSTANCE_ARENA = 0x004,
+
     WMI_INSTANCE_XPACK_01 = 0x008, // TBC
     WMI_INSTANCE_XPACK_02 = 0x010, // WotLK
+    
     WMI_INSTANCE_HAS_NORMAL_10MEN = 0x020,
     WMI_INSTANCE_HAS_NORMAL_25MEN = 0x040,
     WMI_INSTANCE_HAS_HEROIC_10MEN = 0x080,
@@ -235,9 +237,15 @@ namespace MySQLStructure
         uint32_t itemOrder;
         uint32_t menuOptionText;
         uint8_t icon;
-        uint32_t pointOfInterest;
+        uint8_t onChooseAction;
+        uint32_t onChooseData;
+        uint32_t onChooseData2;
+        uint32_t onChooseData3;
+        uint32_t onChooseData4;
         uint32_t nextGossipMenu;
         uint32_t nextGossipMenuText;
+        uint8_t requirementType;
+        uint32_t requirementData;
     };
 
     //gossip_menu_option

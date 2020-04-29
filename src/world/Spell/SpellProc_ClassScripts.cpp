@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -659,7 +659,7 @@ public:
     bool DoEffect(Unit* /*victim*/, SpellInfo const* castingSpell, uint32 /*flag*/, uint32 dmg, uint32 /*abs*/, int* dmgOverwrite, uint32 /*weaponDamageType*/)
     {
         // Only proc for damaging shadow spells
-        if (castingSpell->getSchool() != SCHOOL_SHADOW || !castingSpell->isDamagingSpell())
+        if (castingSpell->getSchoolMask() & SCHOOL_MASK_SHADOW || !castingSpell->isDamagingSpell())
             return true;
 
         // Only proc for single target spells
@@ -812,8 +812,7 @@ public:
 
     void CastSpell(Unit* victim, SpellInfo const* CastingSpell, int* dmg_overwrite)
     {
-        SpellCastTargets targets;
-        targets.m_unitTarget = victim->getGuid();
+        SpellCastTargets targets(victim->getGuid());
 
         Spell* spell = sSpellMgr.newSpell(mTarget, mSpell, true, nullptr);
         spell->forced_basepoints[0] = dmg_overwrite[0];

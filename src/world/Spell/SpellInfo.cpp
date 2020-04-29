@@ -1,9 +1,10 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
 #include "Definitions/PowerType.h"
+#include "Definitions/School.h"
 #include "Definitions/SpellEffects.h"
 #include "Definitions/SpellEffectTarget.h"
 #include "SpellAuras.h"
@@ -54,7 +55,7 @@ SpellInfo::SpellInfo()
     baseLevel = 0;
     spellLevel = 0;
     DurationIndex = 0;
-    powerType = 0;
+    powerType = POWER_TYPE_MANA;
     manaCost = 0;
     manaCostPerlevel = 0;
     manaPerSecond = 0;
@@ -69,7 +70,7 @@ SpellInfo::SpellInfo()
         Reagent[i] = 0;
         ReagentCount[i] = 0;
     }
-    EquippedItemClass = 0;
+    EquippedItemClass = -1;
     EquippedItemSubClass = 0;
     EquippedItemInventoryTypeMask = 0;
     for (auto i = 0; i < MAX_SPELL_EFFECTS; ++i)
@@ -102,7 +103,8 @@ SpellInfo::SpellInfo()
         EffectDamageMultiplier[i] = 0;
         EffectBonusMultiplier[i] = 0;
     }
-    SpellVisual = 0;
+    for (uint8_t i = 0; i < 2; ++i)
+        SpellVisual[i] = 0;
     spellIconID = 0;
     activeIconID = 0;
     spellPriority = 0;
@@ -121,7 +123,7 @@ SpellInfo::SpellInfo()
         TotemCategory[i] = 0;
 #endif
     AreaGroupId = 0;
-    School = 0;
+    SchoolMask = 0;
     RuneCostID = 0;
     SpellDifficultyId = 0;
     
@@ -165,7 +167,6 @@ SpellInfo::SpellInfo()
     custom_apply_on_shapeshift_change = false;
     custom_is_melee_spell = false;
     custom_is_ranged_spell = false;
-    custom_SchoolMask = 0;
 
     for (auto i = 0; i < MAX_SPELL_EFFECTS; ++i)
         EffectCustomFlag[i] = 0;
@@ -281,6 +282,18 @@ int SpellInfo::firstBeneficialEffect() const
     return -1;
 }
 
+uint8_t SpellInfo::getFirstSchoolFromSchoolMask() const
+{
+    for (uint8_t i = 0; i < TOTAL_SPELL_SCHOOLS; ++i)
+    {
+        if (getSchoolMask() & (1 << i))
+            return i;
+    }
+
+    // This should not happen
+    return SCHOOL_NORMAL;
+}
+
 bool SpellInfo::isDamagingEffect(uint8_t effIndex) const
 {
     ARCEMU_ASSERT(effIndex < MAX_SPELL_EFFECTS);
@@ -375,16 +388,7 @@ bool SpellInfo::isAffectingSpell(SpellInfo const* spellInfo) const
 
 bool SpellInfo::hasValidPowerType() const
 {
-#if VERSION_STRING < WotLK
-    if (getPowerType() <= POWER_TYPE_HAPPINESS)
-#elif VERSION_STRING == WotLK
-    if (getPowerType() <= POWER_TYPE_RUNIC_POWER)
-#elif VERSION_STRING >= Cata
-    if (getPowerType() <= POWER_TYPE_ALTERNATIVE)
-#endif
-        return true;
-
-    return false;
+    return getPowerType() < TOTAL_PLAYER_POWER_TYPES;
 }
 
 uint32_t SpellInfo::getSpellDefaultDuration(Unit const* caster) const

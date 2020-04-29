@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -23,7 +23,7 @@ enum GameEventState
     GAMEEVENT_ACTIVE_FORCED     = 4     // Activated by GM command or script
 };
 
-// values based on Holidays.dbc
+// Values based on Holidays.dbc
 enum HolidayIds
 {
     HOLIDAY_NONE                        = 0,
@@ -38,7 +38,7 @@ enum HolidayIds
     HOLIDAY_HARVEST_FESTIVAL            = 321,
     HOLIDAY_HALLOWS_END                 = 324,
     HOLIDAY_LUNAR_FESTIVAL              = 327,
-    // HOLIDAY_LOVE_IS_IN_THE_AIR    = 335, unused/duplicated
+    // HOLIDAY_LOVE_IS_IN_THE_AIR       = 335, unused/duplicated
     HOLIDAY_FIRE_FESTIVAL               = 341,
     HOLIDAY_CALL_TO_ARMS_EY             = 353,
     HOLIDAY_BREWFEST                    = 372,
@@ -52,7 +52,13 @@ enum HolidayIds
     HOLIDAY_DAY_OF_DEAD                 = 409,
     HOLIDAY_CALL_TO_ARMS_IC             = 420,
     HOLIDAY_LOVE_IS_IN_THE_AIR          = 423,
-    HOLIDAY_KALU_AK_FISHING_DERBY       = 424
+    HOLIDAY_KALU_AK_FISHING_DERBY       = 424,
+    // Cataclysm
+    HOLIDAY_CALL_TO_ARMS_BFG            = 435,
+    HOLIDAY_CALL_TO_ARMS_TP             = 436,
+    HOLIDAY_RATED_BG_15_VS_15           = 442,
+    HOLIDAY_RATED_BG_25_VS_25           = 443,
+    HOLIDAY_ANNIVERSARY_7_YEARS         = 467,
 };
 
 struct GameEventFinishCondition

@@ -1,10 +1,11 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
 #pragma once
 
+#include "Definitions/PowerType.h"
 #include "SpellDefines.hpp"
 #include "SpellScript.h"
 
@@ -32,6 +33,8 @@ public:
     bool isDamagingSpell() const;
     bool isHealingSpell() const;
     int firstBeneficialEffect() const;
+
+    uint8_t getFirstSchoolFromSchoolMask() const;
 
     bool isDamagingEffect(uint8_t effIndex) const;
     bool isHealingEffect(uint8_t effIndex) const;
@@ -107,7 +110,7 @@ public:
     uint32_t getBaseLevel() const { return baseLevel; }
     uint32_t getSpellLevel() const { return spellLevel; }
     uint32_t getDurationIndex() const { return DurationIndex; }
-    int32_t getPowerType() const { return powerType; }
+    PowerType getPowerType() const { return powerType; }
     uint32_t getManaCost() const { return manaCost; }
     uint32_t getManaCostPerlevel() const { return manaCostPerlevel; } // not used!
     uint32_t getManaPerSecond() const { return manaPerSecond; } // not used!
@@ -342,7 +345,7 @@ public:
 
     uint32_t getEffectSpellClassMask(uint8_t idx1, uint8_t idx2) const
     {
-        if (idx1 >= MAX_SPELL_TOTEMS || idx2 >= MAX_SPELL_EFFECTS)
+        if (idx1 >= MAX_SPELL_EFFECTS || idx2 >= MAX_SPELL_EFFECTS)
         {
             LogError("Totem index id %u or effect index %u is invalid!", idx1, idx2);
             return 0;
@@ -362,7 +365,7 @@ public:
         return EffectSpellClassMask[idx1];
     }
 
-    uint32_t getSpellVisual() const { return SpellVisual; }
+    uint32_t getSpellVisual(uint8_t visualIndex) const { return SpellVisual[visualIndex]; }
     uint32_t getSpellIconID() const { return spellIconID; }
     uint32_t getActiveIconID() const { return activeIconID; }
     uint32_t getSpellPriority() const { return spellPriority; } // not used!
@@ -416,7 +419,7 @@ public:
 #endif
 
     int32_t getRequiresAreaId() const { return AreaGroupId; }
-    uint32_t getSchool() const { return School; }
+    uint32_t getSchoolMask() const { return SchoolMask; }
     uint32_t getRuneCostID() const { return RuneCostID; }
 
     float getEffectBonusMultiplier(uint8_t idx) const
@@ -453,7 +456,6 @@ public:
     bool getCustom_apply_on_shapeshift_change() const { return custom_apply_on_shapeshift_change; }
     bool getCustom_is_melee_spell() const { return custom_is_melee_spell; }
     bool getCustom_is_ranged_spell() const { return custom_is_ranged_spell; }
-    uint32_t getCustom_SchoolMask() const { return custom_SchoolMask; }
 
     uint32_t getEffectCustomFlag(uint8_t idx) const
     {
@@ -527,7 +529,7 @@ private:
     void setBaseLevel(uint32_t value) { baseLevel = value; }
     void setSpellLevel(uint32_t value) { spellLevel = value; }    // used in HackFixes.cpp
     void setDurationIndex(uint32_t value) { DurationIndex = value; }    // used in HackFixes.cpp / SpellEffects.cpp
-    void setPowerType(int32_t value) { powerType = value; }
+    void setPowerType(PowerType value) { powerType = value; }
     void setManaCost(uint32_t value) { manaCost = value; }
     void setManaCostPerlevel(uint32_t value) { manaCostPerlevel = value; }
     void setManaPerSecond(uint32_t value) { manaPerSecond = value; }
@@ -771,7 +773,7 @@ private:
         EffectSpellClassMask[idx1][idx2] = spellClass;
     }
 
-    void setSpellVisual(uint32_t value) { SpellVisual = value; }
+    void setSpellVisual(uint8_t visualIndex, uint32_t value) { SpellVisual[visualIndex] = value; }
     void setSpellIconID(uint32_t value) { spellIconID = value; }
     void setActiveIconID(uint32_t value) { activeIconID = value; }
     void setSpellPriority(uint32_t value) { spellPriority = value; }
@@ -823,7 +825,7 @@ private:
 #endif
 
     void setRequiresAreaId(int32_t value) { AreaGroupId = value; }
-    void setSchool(uint32_t value) { School = value; }                  // used in HackFixes.cpp
+    void setSchoolMask(uint32_t value) { SchoolMask = value; }                  // used in HackFixes.cpp
     void setRuneCostID(uint32_t value) { RuneCostID = value; }
 
     void setEffectBonusMultiplier(float value, uint8_t idx)
@@ -930,7 +932,7 @@ private:
     uint32_t spellLevel;
     // Data from Spell.dbc (in Cataclysm)
     uint32_t DurationIndex;
-    int32_t powerType;
+    PowerType powerType;
     // Data from SpellPower.dbc (in Cataclysm)
     uint32_t manaCost;
     uint32_t manaCostPerlevel;
@@ -975,7 +977,7 @@ private:
     uint32_t EffectIndex[MAX_SPELL_EFFECTS];
 #endif
     // Data from Spell.dbc (in Cataclysm)
-    uint32_t SpellVisual;
+    uint32_t SpellVisual[2];
     uint32_t spellIconID;
     uint32_t activeIconID;
     uint32_t spellPriority;
@@ -1006,7 +1008,7 @@ private:
     // Data from SpellCastingRequirements.dbc (in Cataclysm)
     int32_t AreaGroupId;
     // Data from Spell.dbc (in Cataclysm)
-    uint32_t School;
+    uint32_t SchoolMask;
     uint32_t RuneCostID;
     // Data from SpellEffect.dbc (in Cataclysm)
     float EffectBonusMultiplier[MAX_SPELL_EFFECTS];
@@ -1104,9 +1106,6 @@ public:
     // set in Hackfixes.cpp - 1 spells (2094)
     // set in SpellCustomizations::SetRangedSpellBool based on school and dmg type
     bool custom_is_ranged_spell;
-
-    // set in HackFixes.cpp for all spells, based on school
-    uint32_t custom_SchoolMask;
 
     // from MySQL table spell_effects_override - 374 spells
     uint32_t EffectCustomFlag[MAX_SPELL_EFFECTS];

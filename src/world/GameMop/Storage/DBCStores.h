@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -155,6 +155,8 @@ DBC::Structures::WMOAreaTableEntry const* GetWMOAreaTableEntryByTriple(int32 roo
 std::string generateName(uint32 type = 0);
 
 uint32 const* getTalentTabPages(uint8 playerClass);
+
+uint8_t getPowerIndexByClass(uint8_t playerClass, uint8_t powerIndex);
 
 bool LoadDBCs();
 

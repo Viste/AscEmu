@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -575,7 +575,6 @@ int32_t CreatureAIScript::_getManaPercent()
 void CreatureAIScript::_regenerateHealth()
 {
     _creature->RegenerateHealth();
-    _creature->RegeneratePower(false);
 }
 
 bool CreatureAIScript::_isCasting()

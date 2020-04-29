@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -21,7 +21,7 @@ std::set<AuthSocket*> _authSockets;
 
 ConfigMgr Config;
 
-static const char* REQUIRED_LOGON_DB_VERSION = "20180810-00_realms";
+static const char* REQUIRED_LOGON_DB_VERSION = "20200221-00_utf8mb4_unicode_ci";
 
 MasterLogon& MasterLogon::getInstance()
 {

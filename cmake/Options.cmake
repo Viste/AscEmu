@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+# Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 
 # general
 set(ASCEMU_SCRIPTLIB_PATH "modules" CACHE PATH "The directory for AscEmu modules." )
@@ -20,6 +20,7 @@ option(BUILD_LUAENGINE "Build LuaEngine." ON)
 set(ASCEMU_TOOLS_PATH "tools" CACHE PATH "The directory where you want the tools installed.")
 option(BUILD_WITH_WARNINGS "Enable/Disable warnings on compilation" ON)
 option(USE_PCH "Enable precompiled headers - it will reduce compilation time" ON)
+option(TREAT_WARNINGS_AS_ERRORS "Treats warnings as errors" ON)
 
 if(NOT USE_PCH)
     set(ASCEMU_COMMENT_PCH //)

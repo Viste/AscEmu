@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -16,13 +16,13 @@ namespace AscEmu::Packets
     public:
         uint64_t guid;
         uint32_t nearestNode;
-        std::array<uint32_t, 12> taxiMask;
+        std::array<uint32_t, DBC_TAXI_MASK_SIZE> taxiMask;
 
         SmsgShowTaxiNodes() : SmsgShowTaxiNodes(0, 0, {0})
         {
         }
 
-        SmsgShowTaxiNodes(uint64_t guid, uint32_t nearestNode, std::array<uint32_t, 12> taxiMask) :
+        SmsgShowTaxiNodes(uint64_t guid, uint32_t nearestNode, std::array<uint32_t, DBC_TAXI_MASK_SIZE> taxiMask) :
             ManagedPacket(SMSG_SHOWTAXINODES, 0),
             guid(guid),
             nearestNode(nearestNode),
@@ -32,7 +32,7 @@ namespace AscEmu::Packets
 
     protected:
 
-        size_t expectedSize() const override { return 4 + 8 + 4 + 4 * 12; }
+        size_t expectedSize() const override { return 4 + 8 + 4 + 4 * DBC_TAXI_MASK_SIZE; }
 
         bool internalSerialise(WorldPacket& packet) override
         {

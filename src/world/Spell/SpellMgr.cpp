@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -322,13 +322,19 @@ void SpellMgr::loadSpellInfoData()
 #endif
         spellInfo.setCastingTimeIndex(dbcSpellEntry->CastingTimeIndex);
         spellInfo.setDurationIndex(dbcSpellEntry->DurationIndex);
-        spellInfo.setPowerType(dbcSpellEntry->powerType);
+        spellInfo.setPowerType(static_cast<PowerType>(dbcSpellEntry->powerType));
         spellInfo.setRangeIndex(dbcSpellEntry->rangeIndex);
         spellInfo.setSpeed(dbcSpellEntry->speed);
-        spellInfo.setSpellVisual(dbcSpellEntry->SpellVisual);
+        spellInfo.setSpellVisual(0, dbcSpellEntry->SpellVisual);
+        spellInfo.setSpellVisual(1, dbcSpellEntry->SpellVisual1);
         spellInfo.setSpellIconID(dbcSpellEntry->spellIconID);
         spellInfo.setActiveIconID(dbcSpellEntry->activeIconID);
-        spellInfo.setSchool(dbcSpellEntry->School);
+#if VERSION_STRING == Classic
+        // Classic doesn't have schools bitwise in DBC
+        spellInfo.setSchoolMask(1 << dbcSpellEntry->School);
+#else
+        spellInfo.setSchoolMask(dbcSpellEntry->School);
+#endif
 #if VERSION_STRING >= WotLK
         spellInfo.setRuneCostID(dbcSpellEntry->RuneCostID);
         spellInfo.setSpellDifficultyID(dbcSpellEntry->SpellDifficultyId);
@@ -667,7 +673,7 @@ void SpellMgr::loadSpellCoefficientOverride()
 
 void SpellMgr::loadSpellCustomOverride()
 {
-    //                                             0     1            2                         3                  4               5              6              7            8
+    //                                                 0        1          2                       3                     4              5             6                7            8
     const auto result = WorldDatabase.Query("SELECT spell_id, rank, assign_on_target_flag, assign_self_cast_only, assign_c_is_flag, proc_flags, proc_target_selfs, proc_chance, proc_charges, "
     //                                      9                       10                           11                         12
                                       "proc_interval, proc_effect_trigger_spell_0, proc_effect_trigger_spell_1, proc_effect_trigger_spell_2 FROM spell_custom_override");
@@ -971,7 +977,7 @@ void SpellMgr::loadSpellAreas()
                 continue;
             }
 
-            if (uint32_t(abs(spellArea.auraSpell)) == spellArea.spellId)
+            if (static_cast<uint32_t>(abs(spellArea.auraSpell)) == spellArea.spellId)
             {
                 LogError("Table `spell_area` has aura spell requirements for itself (id %u), skipped", spellId);
                 continue;
@@ -1044,7 +1050,7 @@ void SpellMgr::loadSpellAreas()
             mSpellAreaForQuestEndMap.insert(SpellAreaForQuestMap::value_type(spellArea.questEnd, spellArea2));
 
         if (spellArea.auraSpell > 0)
-            mSpellAreaForAuraMap.insert(SpellAreaForAuraMap::value_type(uint32_t(abs(spellArea.auraSpell)), spellArea2));
+            mSpellAreaForAuraMap.insert(SpellAreaForAuraMap::value_type(static_cast<uint32_t>(abs(spellArea.auraSpell)), spellArea2));
 
         ++areaCount;
     } while (result->NextRow());

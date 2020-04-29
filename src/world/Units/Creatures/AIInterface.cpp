@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
  * Copyright (C) 2005-2007 Ascent Team
  *
@@ -922,8 +922,8 @@ bool AIInterface::activateShowWayPoints(Player* player, bool showBackwards)
             wpCreature->setLevel(wayPoint->id);
             wpCreature->setNpcFlags(UNIT_NPC_FLAG_NONE);
             wpCreature->SetFaction(player->getFactionTemplate());
-            wpCreature->setHealth(1);
             wpCreature->setMaxHealth(1);
+            wpCreature->setHealth(1);
             wpCreature->setStat(STAT_STRENGTH, wayPoint->flags);
 
             ByteBuffer buf(3000);
@@ -1271,9 +1271,9 @@ void AIInterface::Init(Unit* un, AiScriptTypes at, Movement::WaypointMovementScr
 
     m_Unit = un;
 
-    m_walkSpeed = m_Unit->m_currentSpeedWalk * 0.001f; //move distance per ms time
-    m_runSpeed = m_Unit->m_currentSpeedRun * 0.001f; //move distance per ms time
-    m_flySpeed = m_Unit->m_currentSpeedFly * 0.001f;
+    m_walkSpeed = m_Unit->getSpeedRate(TYPE_WALK, true) * 0.001f; //move distance per ms time
+    m_runSpeed = m_Unit->getSpeedRate(TYPE_RUN, true) * 0.001f; //move distance per ms time
+    m_flySpeed = m_Unit->getSpeedRate(TYPE_FLY, true) * 0.001f;
 
     m_guardTimer = Util::getMSTime();
 }
@@ -1291,9 +1291,9 @@ void AIInterface::Init(Unit* un, AiScriptTypes at, Movement::WaypointMovementScr
     m_Unit = un;
     m_PetOwner = owner;
 
-    m_walkSpeed = m_Unit->m_currentSpeedWalk * 0.001f; //move distance per ms time
-    m_runSpeed = m_Unit->m_currentSpeedRun * 0.001f; //move/ms
-    m_flySpeed = m_Unit->m_currentSpeedFly * 0.001f;
+    m_walkSpeed = m_Unit->getSpeedRate(TYPE_WALK, true) * 0.001f; //move distance per ms time
+    m_runSpeed = m_Unit->getSpeedRate(TYPE_RUN, true) * 0.001f; //move distance per ms time
+    m_flySpeed = m_Unit->getSpeedRate(TYPE_FLY, true) * 0.001f;
 }
 
 Unit* AIInterface::GetUnit() const
@@ -1806,8 +1806,7 @@ void AIInterface::_UpdateCombat(uint32 /*p_time*/)
                                 {
                                     SpellInfo const* info = sSpellMgr.getSpellInfo(CREATURE_SPELL_TO_DAZE);
                                     Spell* sp = sSpellMgr.newSpell(m_Unit, info, false, NULL);
-                                    SpellCastTargets targets;
-                                    targets.m_unitTarget = getNextTarget()->getGuid();
+                                    SpellCastTargets targets(getNextTarget()->getGuid());
                                     sp->prepare(&targets);
                                 }
                             }
@@ -1861,8 +1860,7 @@ void AIInterface::_UpdateCombat(uint32 /*p_time*/)
                             if (info)
                             {
                                 Spell* sp = sSpellMgr.newSpell(m_Unit, info, false, NULL);
-                                SpellCastTargets targets;
-                                targets.m_unitTarget = getNextTarget()->getGuid();
+                                SpellCastTargets targets(getNextTarget()->getGuid());
                                 sp->prepare(&targets);
                                 //Lets make spell handle this
                                 //m_Unit->Strike(GetNextTarget(), (agent == AGENT_MELEE ? MELEE : RANGED), NULL, 0, 0, 0);
@@ -1924,12 +1922,12 @@ void AIInterface::_UpdateCombat(uint32 /*p_time*/)
                         }
                         case TTYPE_SOURCE:
                         {
-                            m_Unit->castSpellLoc(targets.source(), spellInfo, true);
+                            m_Unit->castSpellLoc(targets.getSource(), spellInfo, true);
                             break;
                         }
                         case TTYPE_DESTINATION:
                         {
-                            m_Unit->castSpellLoc(targets.destination(), spellInfo, true);
+                            m_Unit->castSpellLoc(targets.getDestination(), spellInfo, true);
                             break;
                         }
                         default:
@@ -2154,7 +2152,7 @@ void AIInterface::HealReaction(Unit* caster, Unit* victim, SpellInfo const* sp, 
         threat = threat / 2; //Paladins only get 50% threat per heal than other classes
 
     if (sp != nullptr)
-        threat += (threat * caster->GetGeneratedThreatModifyer(sp->getSchool()) / 100);
+        threat += (threat * caster->GetGeneratedThreatModifyer(sp->getFirstSchoolFromSchoolMask()) / 100);
 
     if (threat < 1)
         threat = 1;
@@ -2320,7 +2318,7 @@ Unit* AIInterface::FindTarget()
 
         if (target)
         {
-            m_Unit->m_currentSpeedRun = m_Unit->m_basicSpeedRun * 2.0f;
+            m_Unit->setSpeedRate(TYPE_RUN, m_Unit->getSpeedRate(TYPE_RUN, false) * 2.0f, true);
             AttackReaction(target, 1, 0);
 
             m_Unit->SendAIReaction();
@@ -2876,13 +2874,13 @@ bool AIInterface::MoveTo(float x, float y, float z, float o /*= 0.0f*/)
 void AIInterface::UpdateSpeeds()
 {
     if (hasWalkMode(WALKMODE_SPRINT))
-        m_runSpeed = (m_Unit->m_currentSpeedRun + 5.0f) * 0.001f;
+        m_runSpeed = (m_Unit->getSpeedRate(TYPE_RUN, true) + 5.0f) * 0.001f;
 
     if (hasWalkMode(WALKMODE_RUN))
-        m_runSpeed = m_Unit->m_currentSpeedRun * 0.001f;
+        m_runSpeed = m_Unit->getSpeedRate(TYPE_RUN, true) * 0.001f;
 
-    m_walkSpeed = m_Unit->m_currentSpeedWalk * 0.001f;
-    m_flySpeed = m_Unit->m_currentSpeedFly * 0.001f;
+    m_walkSpeed = m_Unit->getSpeedRate(TYPE_WALK, true) * 0.001f;
+    m_flySpeed = m_Unit->getSpeedRate(TYPE_FLY, true) * 0.001f;
 }
 
 void AIInterface::SendCurrentMove(Player* plyr)
@@ -3049,7 +3047,7 @@ void AIInterface::CastSpell(Unit* caster, SpellInfo const* spellInfo, SpellCastT
     setAiState(AI_STATE_CASTING);
 #ifdef _AI_DEBUG
     LOG_DEBUG("AI DEBUG: Unit %u casting spell %s on target " I64FMT " ", caster->getEntry(),
-              sSpellStore.LookupString(spellInfo->Name), targets.m_unitTarget);
+              sSpellStore.LookupString(spellInfo->Name), targets.getUnitTarget());
 #endif
 
     //i wonder if this will lead to a memory leak :S
@@ -3073,22 +3071,23 @@ SpellInfo const* AIInterface::getSpellEntry(uint32 spellId)
 SpellCastTargets AIInterface::setSpellTargets(SpellInfo const* /*spellInfo*/, Unit* target) const
 {
     SpellCastTargets targets;
-    targets.m_unitTarget = target ? target->getGuid() : 0;
-    targets.m_itemTarget = 0;
+    targets.setGameObjectTarget(0);
+    targets.setUnitTarget(target ? target->getGuid() : 0);
+    targets.setItemTarget(0);
     targets.setSource(m_Unit->GetPosition());
     targets.setDestination(m_Unit->GetPosition());
 
     if (m_nextSpell && m_nextSpell->spelltargetType == TTYPE_SINGLETARGET)
     {
-        targets.m_targetMask = TARGET_FLAG_UNIT;
+        targets.setTargetMask(TARGET_FLAG_UNIT);
     }
     else if (m_nextSpell && m_nextSpell->spelltargetType == TTYPE_SOURCE)
     {
-        targets.m_targetMask = TARGET_FLAG_SOURCE_LOCATION;
+        targets.setTargetMask(TARGET_FLAG_SOURCE_LOCATION);
     }
     else if (m_nextSpell && m_nextSpell->spelltargetType == TTYPE_DESTINATION)
     {
-        targets.m_targetMask = TARGET_FLAG_DEST_LOCATION;
+        targets.setTargetMask(TARGET_FLAG_DEST_LOCATION);
         if (target)
         {
             targets.setDestination(target->GetPosition());
@@ -3096,8 +3095,8 @@ SpellCastTargets AIInterface::setSpellTargets(SpellInfo const* /*spellInfo*/, Un
     }
     else if (m_nextSpell && m_nextSpell->spelltargetType == TTYPE_CASTER)
     {
-        targets.m_targetMask = TARGET_FLAG_UNIT;
-        targets.m_unitTarget = m_Unit->getGuid();
+        targets.setTargetMask(TARGET_FLAG_UNIT);
+        targets.setUnitTarget(m_Unit->getGuid());
     }
 
     return targets;
@@ -3699,7 +3698,7 @@ uint32 AIInterface::_CalcThreat(uint32 damage, SpellInfo const* sp, Unit* Attack
 
     // modify threat by Buffs
     if (sp != nullptr)
-        mod += (mod * Attacker->GetGeneratedThreatModifyer(sp->getSchool()) / 100);
+        mod += (mod * Attacker->GetGeneratedThreatModifyer(sp->getFirstSchoolFromSchoolMask()) / 100);
     else
         mod += (mod * Attacker->GetGeneratedThreatModifyer(0) / 100);
 
@@ -3919,8 +3918,8 @@ void AIInterface::_UpdateTotem(uint32 p_time)
             //something happened to our target, pick another one
             SpellCastTargets targets(0);
             pSpell->GenerateTargets(&targets);
-            if (targets.m_targetMask & TARGET_FLAG_UNIT)
-                setNextTarget(targets.m_unitTarget);
+            if (targets.getTargetMask() & TARGET_FLAG_UNIT)
+                setNextTarget(targets.getUnitTarget());
         }
         nextTarget = getNextTarget();
         if (nextTarget)
@@ -4915,16 +4914,19 @@ void AIInterface::SetCreatureProtoDifficulty(uint32 entry)
                 m_Unit->GetAIInterface()->setAiScriptType(AI_SCRIPT_PASSIVE);
             }
 
-            m_walkSpeed = m_Unit->m_basicSpeedWalk = properties_difficulty->walk_speed;
-            m_runSpeed = m_Unit->m_basicSpeedRun = properties_difficulty->run_speed;
+            m_Unit->setSpeedRate(TYPE_WALK, properties_difficulty->walk_speed, false);
+            m_Unit->setSpeedRate(TYPE_RUN, properties_difficulty->run_speed, false);
+            m_Unit->setSpeedRate(TYPE_FLY, properties_difficulty->fly_speed, false);
+            m_walkSpeed = properties_difficulty->walk_speed;
+            m_runSpeed = properties_difficulty->run_speed;
             m_flySpeed = properties_difficulty->fly_speed;
 
             m_Unit->setScale(properties_difficulty->Scale);
 
             uint32 health = properties_difficulty->MinHealth + Util::getRandomUInt(properties_difficulty->MaxHealth - properties_difficulty->MinHealth);
 
-            m_Unit->setHealth(health);
             m_Unit->setMaxHealth(health);
+            m_Unit->setHealth(health);
             m_Unit->setBaseHealth(health);
 
             m_Unit->setMaxPower(POWER_TYPE_MANA, properties_difficulty->Mana);

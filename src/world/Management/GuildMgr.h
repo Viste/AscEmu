@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 This file is released under the MIT license. See README-MIT for more information.
 */
 
@@ -47,7 +47,9 @@ class SERVER_DECL GuildMgr
         uint32_t getXPForGuildLevel(uint8_t level) const;
         std::vector<GuildReward> const& getGuildRewards() const { return GuildRewards; }
 
+#if VERSION_STRING >= Cata
         void resetTimes(bool week);
+#endif
         uint32_t lastSave = 0;
         bool firstSave = false;
 

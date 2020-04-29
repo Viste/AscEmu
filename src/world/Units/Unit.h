@@ -1,6 +1,6 @@
 /*
 * AscEmu Framework based on ArcEmu MMORPG Server
-* Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+* Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
 * Copyright (C) 2005-2007 Ascent Team
 *
@@ -54,7 +54,7 @@ class Vehicle;
 
 struct FactionDBC;
 
-enum UnitSpeedType
+enum UnitSpeedType : uint8
 {
     TYPE_WALK           = 0,
     TYPE_RUN            = 1,
@@ -64,7 +64,50 @@ enum UnitSpeedType
     TYPE_TURN_RATE      = 5,
     TYPE_FLY            = 6,
     TYPE_FLY_BACK       = 7,
-    TYPE_PITCH_RATE     = 8
+    TYPE_PITCH_RATE     = 8,
+
+    MAX_SPEED_TYPE      = 9
+};
+
+struct UnitSpeedInfo
+{
+    UnitSpeedInfo()
+    {
+        // Current speed
+        m_currentSpeedRate[TYPE_WALK]       = 2.5f;
+        m_currentSpeedRate[TYPE_RUN]        = 7.0f;
+        m_currentSpeedRate[TYPE_RUN_BACK]   = 4.5f;
+        m_currentSpeedRate[TYPE_SWIM]       = 4.722222f;
+        m_currentSpeedRate[TYPE_SWIM_BACK]  = 2.5f;
+        m_currentSpeedRate[TYPE_TURN_RATE]  = 3.141594f;
+        m_currentSpeedRate[TYPE_FLY]        = 7.0f;
+        m_currentSpeedRate[TYPE_FLY_BACK]   = 4.5f;
+        m_currentSpeedRate[TYPE_PITCH_RATE] = 3.14f;
+
+        // Basic speeds
+        m_basicSpeedRate[TYPE_WALK]         = 2.5f;
+        m_basicSpeedRate[TYPE_RUN]          = 7.0f;
+        m_basicSpeedRate[TYPE_RUN_BACK]     = 4.5f;
+        m_basicSpeedRate[TYPE_SWIM]         = 4.722222f;
+        m_basicSpeedRate[TYPE_SWIM_BACK]    = 2.5f;
+        m_basicSpeedRate[TYPE_TURN_RATE]    = 3.141594f;
+        m_basicSpeedRate[TYPE_FLY]          = 7.0f;
+        m_basicSpeedRate[TYPE_FLY_BACK]     = 4.5f;
+        m_basicSpeedRate[TYPE_PITCH_RATE]   = 3.14f;
+    }
+
+    UnitSpeedInfo(UnitSpeedInfo const& speedInfo)
+    {
+        // Current speed
+        for (uint8_t i = 0; i < MAX_SPEED_TYPE; ++i)
+        {
+            m_currentSpeedRate[i] = speedInfo.m_currentSpeedRate[i];
+            m_basicSpeedRate[i] = speedInfo.m_basicSpeedRate[i];
+        }
+    }
+
+    float m_currentSpeedRate[MAX_SPEED_TYPE];
+    float m_basicSpeedRate[MAX_SPEED_TYPE];
 };
 
 // MIT End
@@ -277,7 +320,7 @@ public:
     uint8_t getGender() const;
     void setGender(uint8_t gender);
 
-    uint8_t getPowerType() const;
+    PowerType getPowerType() const;
     void setPowerType(uint8_t powerType);
     //bytes_0 end
 
@@ -285,19 +328,30 @@ public:
     void setHealth(uint32_t health);
     void modHealth(int32_t health);
 
-    uint32_t getPower(uint16_t index) const;
-    void setPower(uint16_t index, uint32_t value);
-    void modPower(uint16_t index, int32_t value);
+    uint32_t getPower(PowerType type) const;
+    void setPower(PowerType type, uint32_t value, bool sendPacket = true);
+    void modPower(PowerType type, int32_t value);
 
     uint32_t getMaxHealth() const;
     void setMaxHealth(uint32_t maxHealth);
     void modMaxHealth(int32_t maxHealth);
 
-    void setMaxMana(uint32_t maxMana);
+    uint32_t getMaxPower(PowerType type) const;
+    void setMaxPower(PowerType type, uint32_t value);
+    void modMaxPower(PowerType type, int32_t value);
 
-    uint32_t getMaxPower(uint16_t index) const;
-    void setMaxPower(uint16_t index, uint32_t value);
-    void modMaxPower(uint16_t index, int32_t value);
+#if VERSION_STRING >= WotLK
+    float getPowerRegeneration(PowerType type) const;
+    void setPowerRegeneration(PowerType type, float value);
+    float getManaRegeneration() const;
+    void setManaRegeneration(float value);
+
+    // In cata+ these mean 'while in combat'
+    float getPowerRegenerationWhileCasting(PowerType type) const;
+    void setPowerRegenerationWhileCasting(PowerType type, float value);
+    float getManaRegenerationWhileCasting() const;
+    void setManaRegenerationWhileCasting(float value);
+#endif
 
     uint32_t getLevel() const;
     void setLevel(uint32_t level);
@@ -510,40 +564,15 @@ public:
     void setMoveWalk(bool set_walk);
  
     // Speed
+    UnitSpeedInfo const* getSpeedInfo() const { return &m_UnitSpeedInfo; }
+    float getSpeedRate(UnitSpeedType type, bool current) const;
+    void setSpeedRate(UnitSpeedType type, float value, bool current);
+    void resetCurrentSpeeds();
+    UnitSpeedType getFastestSpeedType() const;
 private:
-
-    float m_currentSpeedWalk;
-    float m_currentSpeedRun;
-    float m_currentSpeedRunBack;
-    float m_currentSpeedSwim;
-    float m_currentSpeedSwimBack;
-    float m_currentTurnRate;
-    float m_currentSpeedFly;
-    float m_currentSpeedFlyBack;
-    float m_currentPitchRate;
-
-    float m_basicSpeedWalk;
-    float m_basicSpeedRun;
-    float m_basicSpeedRunBack;
-    float m_basicSpeedSwim;
-    float m_basicSpeedSwimBack;
-    float m_basicTurnRate;
-    float m_basicSpeedFly;
-    float m_basicSpeedFlyBack;
-    float m_basicPitchRate;
+    UnitSpeedInfo m_UnitSpeedInfo;
 
 public:
-
-    float getSpeedForType(UnitSpeedType speed_type, bool get_basic = false) const;
-    float getFlySpeed() const;
-    float getSwimSpeed() const;
-    float getRunSpeed() const;
-    UnitSpeedType getFastestSpeedType() const;
-    float getFastestSpeed() const;
-
-    void setSpeedForType(UnitSpeedType speed_type, float speed, bool set_basic = false);
-    void resetCurrentSpeed();
-
     void sendMoveSplinePaket(UnitSpeedType speed_type);
 
     // Mover
@@ -657,11 +686,47 @@ public:
 
 public:
     //////////////////////////////////////////////////////////////////////////////////////////
+    // Power related
+    void regeneratePowers(uint16_t timePassed);
+    void regeneratePower(PowerType type);
+#if VERSION_STRING < Cata
+    void interruptPowerRegeneration(uint32_t timeInMS);
+    bool isPowerRegenerationInterrupted() const;
+#endif
+
+    void energize(Unit* target, uint32_t spellId, uint32_t amount, PowerType type);
+    void sendSpellEnergizeLog(Unit* target, uint32_t spellId, uint32_t amount, PowerType type);
+
+    uint8_t getPowerPct(PowerType powerType) const;
+
+    void sendPowerUpdate(bool self);
+
+private:
+    // Converts power type to power index
+    uint8_t getPowerIndexFromDBC(PowerType type) const;
+
+#if VERSION_STRING < Cata
+    // Five second mana regeneration interrupt timer
+    uint32_t m_powerRegenerationInterruptTime = 0;
+#endif
+
+    // The leftover power from power regeneration which will be added to new value on next power update
+    float_t m_powerFractions[TOTAL_PLAYER_POWER_TYPES];
+
+protected:
+    // Mana and Energy
+    uint16_t m_manaEnergyRegenerateTimer = 0;
+    uint16_t m_focusRegenerateTimer = 0;
+
+public:
+    //////////////////////////////////////////////////////////////////////////////////////////
     // Misc
     void setAttackTimer(WeaponDamageType type, int32_t time);
     uint32_t getAttackTimer(WeaponDamageType type) const;
     bool isAttackReady(WeaponDamageType type) const;
-    void resetAttackTimers();
+    void resetAttackTimer(WeaponDamageType type);
+    void modAttackSpeedModifier(WeaponDamageType type, int32_t amount);
+    float getAttackSpeedModifier(WeaponDamageType type) const;
 
     void sendEnvironmentalDamageLogPacket(uint64_t guid, uint8_t type, uint32_t damage, uint64_t unk = 0);
 
@@ -680,11 +745,16 @@ public:
     bool isSitting() const;
 
     uint8_t getHealthPct() const;
-    uint8_t getPowerPct(PowerType powerType) const;
 
     //\ todo: should this and other tag related variables be under Creature class?
     bool isTaggedByPlayerOrItsGroup(Player* tagger);
 
+private:
+    uint32_t m_attackTimer[TOTAL_WEAPON_DAMAGE_TYPES];
+    //\ todo: there seems to be new haste update fields in playerdata in cata, and moved to unitdata in mop
+    float m_attackSpeed[TOTAL_WEAPON_DAMAGE_TYPES];
+
+public:
     //////////////////////////////////////////////////////////////////////////////////////////
     // Death
 protected:
@@ -744,8 +814,7 @@ public:
 
     // Do not alter anything below this line
     // -------------------------------------
-private:
-    uint32_t m_attackTimer[3];
+
     // MIT End
     // AGPL Start
 public:
@@ -788,10 +857,7 @@ public:
     bool IsInInstance();
     void CalculateResistanceReduction(Unit* pVictim, dealdamage* dmg, SpellInfo const* ability, float ArmorPctReduce);
     void RegenerateHealth();
-    void RegeneratePower(bool isinterrupted);
     void setHRegenTimer(uint32 time) { m_H_regenTimer = static_cast<uint16>(time); }
-    void setPRegenTimer(uint32 time) { m_P_regenTimer = static_cast<uint16>(time); }
-    void DelayPowerRegeneration(uint32 time) { m_P_regenTimer = static_cast<uint16>(time); if (!m_interruptedRegenTime) m_interruptedRegenTime = 2000; }
     void DeMorph();
     uint32 ManaShieldAbsorb(uint32 dmg);
     void smsg_AttackStart(Unit* pVictim);
@@ -950,7 +1016,6 @@ public:
     void unsetDetectRangeMod(uint64 guid);
     int32 getDetectRangeMod(uint64 guid);
     void Heal(Unit* target, uint32 SpellId, uint32 amount);
-    void Energize(Unit* target, uint32 SpellId, uint32 amount, uint32 type);
 
     Loot loot;
     uint32 SchoolCastPrevent[TOTAL_SPELL_SCHOOLS];
@@ -1143,7 +1208,6 @@ public:
     uint32 SchoolImmunityList[TOTAL_SPELL_SCHOOLS];
     float SpellCritChanceSchool[TOTAL_SPELL_SCHOOLS];
 
-    int32 PowerCostMod[TOTAL_SPELL_SCHOOLS];
     float PowerCostPctMod[TOTAL_SPELL_SCHOOLS];        // armor penetration & spell penetration
 
     int32 AttackerCritChanceMod[TOTAL_SPELL_SCHOOLS];
@@ -1153,9 +1217,8 @@ public:
     int32 CreatureRangedAttackPowerMod[12];
 
     int32 PctRegenModifier;
-    float PctPowerRegenModifier[4];
-
-    void UpdatePowerAmm();
+    // SPELL_AURA_MOD_POWER_REGEN_PERCENT
+    float PctPowerRegenModifier[TOTAL_PLAYER_POWER_TYPES];
 
     // Auras Modifiers
     int32 m_pacified;
@@ -1269,11 +1332,9 @@ public:
     CombatStatusHandler CombatStatus;
     bool m_temp_summon;
 
-    void EventStopChanneling(bool abort);
     void EventStrikeWithAbility(uint64 guid, SpellInfo const* sp, uint32 damage);
     void DispelAll(bool positive);
 
-    void SendPowerUpdate(bool self);
     void SendPeriodicAuraLog(const WoWGuid & CasterGUID, const WoWGuid & casterGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags, bool is_critical);
     void SendPeriodicHealAuraLog(const WoWGuid & CasterGUID, const WoWGuid & TargetGUID, uint32 SpellID, uint32 healed, uint32 over_healed, bool is_critical);
 
@@ -1307,7 +1368,6 @@ public:
     void ResetAuraUpdateMaskForRaid() { m_auraRaidUpdateMask = 0; }
     void SetAuraUpdateMaskForRaid(uint8 slot) { m_auraRaidUpdateMask |= (uint64(1) << slot); }
     void UpdateAuraForGroup(uint8 slot);
-    void HandleUpdateFieldChange(uint32 Index);
 
     Movement::UnitMovementManager m_movementManager;
 protected:
@@ -1321,8 +1381,6 @@ protected:
     uint8 m_meleespell_ecn;         // extra_cast_number
 
     uint16 m_H_regenTimer;
-    uint16 m_P_regenTimer;
-    uint32 m_interruptedRegenTime;  //PowerInterruptedegenTimer.
 
     std::list<Aura*> m_GarbageAuras;
     std::list<Spell*> m_GarbageSpells;

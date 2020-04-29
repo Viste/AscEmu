@@ -1,6 +1,6 @@
 /*
  * AscEmu Framework based on ArcEmu MMORPG Server
- * Copyright (c) 2014-2019 AscEmu Team <http://www.ascemu.org>
+ * Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
  * Copyright (C) 2008-2012 ArcEmu Team <http://www.ArcEmu.org/>
 
  * This program is free software: you can redistribute it and/or modify
@@ -130,7 +130,14 @@ void Spell::FillTargetMap(uint32 i)
     //always add this guy :P
     if (!(TargetType & (SPELL_TARGET_AREA | SPELL_TARGET_AREA_SELF | SPELL_TARGET_AREA_CURTARGET | SPELL_TARGET_AREA_CONE | SPELL_TARGET_OBJECT_SELF | SPELL_TARGET_OBJECT_PETOWNER)))
     {
-        Object* target = m_caster->GetMapMgr()->_GetObject(m_targets.m_unitTarget);
+        Object* target = nullptr;
+        if (TargetType & SPELL_TARGET_REQUIRE_GAMEOBJECT)
+            target = m_caster->GetMapMgrObject(m_targets.getGameObjectTarget());
+        else if (TargetType & SPELL_TARGET_REQUIRE_ITEM)
+            target = m_caster->GetMapMgrObject(m_targets.getItemTarget());
+        else
+            target = m_caster->GetMapMgrObject(m_targets.getUnitTarget());
+
         AddTarget(i, TargetType, target);
     }
 
@@ -147,7 +154,7 @@ void Spell::FillTargetMap(uint32 i)
     if (TargetType & SPELL_TARGET_OBJECT_PETOWNER)
     {
         WoWGuid wowGuid;
-        wowGuid.Init(m_targets.m_unitTarget);
+        wowGuid.Init(m_targets.getUnitTarget());
         if (wowGuid.isPet())
         {
             Pet* p = m_caster->GetMapMgr()->GetPet(wowGuid.getGuidLowPart());
@@ -204,7 +211,7 @@ void Spell::AddScriptedOrSpellFocusTargets(uint32 i, uint32 targetType, float r,
 
 void Spell::AddConeTargets(uint32 i, uint32 targetType, float /*r*/, uint32 maxtargets)
 {
-    std::vector<uint64_t>* list = &m_targetUnits[i];
+    std::vector<uint64_t>* list = &m_effectTargets[i];
     for (const auto& itr : m_caster->getInRangeObjectsSet())
     {
         if (!itr || !itr->isCreatureOrPlayer() || !static_cast<Unit*>(itr)->isAlive())
@@ -228,12 +235,12 @@ void Spell::AddChainTargets(uint32 i, uint32 targetType, float /*r*/, uint32 /*m
     if (!m_caster->IsInWorld())
         return;
 
-    Object* targ = m_caster->GetMapMgr()->_GetObject(m_targets.m_unitTarget);
+    Object* targ = m_caster->GetMapMgr()->_GetObject(m_targets.getUnitTarget());
 
     if (targ == nullptr)
         return;
 
-    std::vector<uint64_t>* list = &m_targetUnits[i];
+    std::vector<uint64_t>* list = &m_effectTargets[i];
 
     //if selected target is party member, then jumps on party
     Unit* firstTarget = nullptr;
@@ -291,7 +298,7 @@ void Spell::AddChainTargets(uint32 i, uint32 targetType, float /*r*/, uint32 /*m
 
 void Spell::AddPartyTargets(uint32 i, uint32 targetType, float r, uint32 /*maxtargets*/)
 {
-    Object* u = m_caster->GetMapMgr()->_GetObject(m_targets.m_unitTarget);
+    Object* u = m_caster->GetMapMgr()->_GetObject(m_targets.getUnitTarget());
     if (u == nullptr)
         u = m_caster;
 
@@ -322,7 +329,7 @@ void Spell::AddPartyTargets(uint32 i, uint32 targetType, float r, uint32 /*maxta
 
 void Spell::AddRaidTargets(uint32 i, uint32 targetType, float r, uint32 /*maxtargets*/, bool /*partylimit*/)
 {
-    Object* u = m_caster->GetMapMgr()->_GetObject(m_targets.m_unitTarget);
+    Object* u = m_caster->GetMapMgr()->_GetObject(m_targets.getUnitTarget());
     if (u == nullptr)
         u = m_caster;
 
@@ -359,7 +366,7 @@ void Spell::AddAOETargets(uint32 i, uint32 targetType, float r, uint32 maxtarget
     if (targetType & (SPELL_TARGET_AREA_PARTY | SPELL_TARGET_AREA_RAID) && !(p_caster == nullptr && !m_caster->isPet() && (!m_caster->isCreature() || !m_caster->isTotem())))
         return;
 
-    Object* tarobj = m_caster->GetMapMgr()->_GetObject(m_targets.m_unitTarget);
+    Object* tarobj = m_caster->GetMapMgr()->_GetObject(m_targets.getUnitTarget());
 
     if (targetType & SPELL_TARGET_AREA_SELF)
         source = m_caster->GetPosition();
@@ -367,15 +374,15 @@ void Spell::AddAOETargets(uint32 i, uint32 targetType, float r, uint32 maxtarget
         source = tarobj->GetPosition();
     else
     {
-        m_targets.m_targetMask |= TARGET_FLAG_DEST_LOCATION;
-        source = m_targets.destination();
+        m_targets.addTargetMask(TARGET_FLAG_DEST_LOCATION);
+        source = m_targets.getDestination();
     }
 
     //caster might be in the aoe LOL
     if (m_caster->CalcDistance(source) <= r)
         AddTarget(i, targetType, m_caster);
 
-    std::vector<uint64_t>* t = &m_targetUnits[i];
+    std::vector<uint64_t>* t = &m_effectTargets[i];
 
     for (const auto& itr : m_caster->getInRangeObjectsSet())
     {
@@ -393,7 +400,7 @@ void Spell::AddAOETargets(uint32 i, uint32 targetType, float r, uint32 maxtarget
 
 bool Spell::AddTarget(uint32 i, uint32 TargetType, Object* obj)
 {
-    std::vector<uint64_t>* t = &m_targetUnits[i];
+    std::vector<uint64_t>* t = &m_effectTargets[i];
 
     if (obj == nullptr || !obj->IsInWorld())
         return false;
@@ -418,7 +425,7 @@ bool Spell::AddTarget(uint32 i, uint32 TargetType, Object* obj)
         return false;
     if (TargetType & SPELL_TARGET_OBJECT_TARCLASS)
     {
-        Object* originaltarget = m_caster->GetMapMgr()->_GetObject(m_targets.m_unitTarget);
+        Object* originaltarget = m_caster->GetMapMgr()->_GetObject(m_targets.getUnitTarget());
 
         if (originaltarget == nullptr || (originaltarget->isPlayer() && obj->isPlayer() && static_cast<Player*>(originaltarget)->getClass() != static_cast<Player*>(obj)->getClass()) || (originaltarget->isPlayer() && !obj->isPlayer()) || (!originaltarget->isPlayer() && obj->isPlayer()))
             return false;
@@ -428,25 +435,25 @@ bool Spell::AddTarget(uint32 i, uint32 TargetType, Object* obj)
     if (TargetType & (SPELL_TARGET_AREA | SPELL_TARGET_AREA_SELF | SPELL_TARGET_AREA_CURTARGET | SPELL_TARGET_AREA_CONE | SPELL_TARGET_AREA_PARTY | SPELL_TARGET_AREA_RAID) && ((obj->isCreatureOrPlayer() && !static_cast<Unit*>(obj)->isAlive()) || (obj->isCreature() && obj->isTotem())))
         return false;
 
-    uint8 hitresult = (TargetType & SPELL_TARGET_REQUIRE_ATTACKABLE && obj->isCreatureOrPlayer()) ? DidHit(i, static_cast<Unit*>(obj)) : SPELL_DID_HIT_SUCCESS;
+    SpellDidHitResult hitresult = (TargetType & SPELL_TARGET_REQUIRE_ATTACKABLE && obj->isCreatureOrPlayer()) ? static_cast<SpellDidHitResult>(DidHit(i, static_cast<Unit*>(obj))) : SPELL_DID_HIT_SUCCESS;
     if (hitresult != SPELL_DID_HIT_SUCCESS)
     {
-        uint8 extended = 0;
+        SpellDidHitResult extended = SPELL_DID_HIT_SUCCESS;
         if (hitresult == SPELL_DID_HIT_REFLECT && u_caster != nullptr)
         {
             //for checks
             Unit* tmp = u_caster;
             u_caster = static_cast<Unit*>(obj);
-            extended = DidHit(i, tmp);
+            extended = static_cast<SpellDidHitResult>(DidHit(i, tmp));
             u_caster = tmp;
         }
-        ModeratedTargets.push_back(SpellTargetMod(obj->getGuid(), hitresult));
+        missedTargets.push_back(SpellTargetMod(obj->getGuid(), hitresult, extended));
         return false;
     }
     else
     {
         //check target isnt already in
-        for (std::vector<uint64_t>::iterator itr = m_targetUnits[i].begin(); itr != m_targetUnits[i].end(); ++itr)
+        for (std::vector<uint64_t>::iterator itr = m_effectTargets[i].begin(); itr != m_effectTargets[i].end(); ++itr)
         {
             if (obj->getGuid() == *itr)
                 return false;
@@ -465,7 +472,7 @@ bool Spell::AddTarget(uint32 i, uint32 TargetType, Object* obj)
             //are we using a different location?
             if (TargetType & SPELL_TARGET_AREA)
             {
-                auto destination = m_targets.destination();
+                auto destination = m_targets.getDestination();
                 x = destination.x;
                 y = destination.y;
                 z = destination.z;
@@ -517,14 +524,14 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
 
         if (TargetType & (SPELL_TARGET_OBJECT_SELF | SPELL_TARGET_AREA_PARTY | SPELL_TARGET_AREA_RAID))
         {
-            t->m_targetMask |= TARGET_FLAG_UNIT;
-            t->m_unitTarget = u_caster->getGuid();
+            t->addTargetMask(TARGET_FLAG_UNIT);
+            t->setUnitTarget(u_caster->getGuid());
             result = true;
         }
 
         if (TargetType & SPELL_TARGET_NO_OBJECT)
         {
-            t->m_targetMask = TARGET_FLAG_SELF;
+            t->setTargetMask(TARGET_FLAG_SELF);
             result = true;
         }
 
@@ -541,14 +548,14 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
                     {
                         if (target->isCreatureOrPlayer())
                         {
-                            t->m_targetMask |= TARGET_FLAG_UNIT;
-                            t->m_unitTarget = target->getGuid();
+                            t->addTargetMask(TARGET_FLAG_UNIT);
+                            t->setUnitTarget(target->getGuid());
                             result = true;
                         }
                         else if (target->isGameObject())
                         {
-                            t->m_targetMask |= TARGET_FLAG_OBJECT;
-                            t->m_unitTarget = target->getGuid();
+                            t->addTargetMask(TARGET_FLAG_OBJECT);
+                            t->setGameObjectTarget(target->getGuid());
                             result = true;
                         }
                     }
@@ -566,14 +573,14 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
                     {
                         if (target->isCreatureOrPlayer())
                         {
-                            t->m_targetMask |= TARGET_FLAG_UNIT;
-                            t->m_unitTarget = target->getGuid();
+                            t->addTargetMask(TARGET_FLAG_UNIT);
+                            t->setUnitTarget(target->getGuid());
                             result = true;
                         }
                         else if (target->isGameObject())
                         {
-                            t->m_targetMask |= TARGET_FLAG_OBJECT;
-                            t->m_unitTarget = target->getGuid();
+                            t->addTargetMask(TARGET_FLAG_OBJECT);
+                            t->setGameObjectTarget(target->getGuid());
                             result = true;
                         }
                     }
@@ -586,14 +593,14 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
                     {
                         if (target->isCreatureOrPlayer())
                         {
-                            t->m_targetMask |= TARGET_FLAG_UNIT;
-                            t->m_unitTarget = target->getGuid();
+                            t->addTargetMask(TARGET_FLAG_UNIT);
+                            t->setUnitTarget(target->getGuid());
                             result = true;
                         }
                         else if (target->isGameObject())
                         {
-                            t->m_targetMask |= TARGET_FLAG_OBJECT;
-                            t->m_unitTarget = target->getGuid();
+                            t->addTargetMask(TARGET_FLAG_OBJECT);
+                            t->setGameObjectTarget(target->getGuid());
                             result = true;
                         }
                     }
@@ -604,8 +611,8 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
                     Unit* target = u_caster->GetMapMgr()->GetUnit(GetSinglePossibleEnemy(i));
                     if (target != nullptr)
                     {
-                        t->m_targetMask |= TARGET_FLAG_UNIT;
-                        t->m_unitTarget = target->getGuid();
+                        t->addTargetMask(TARGET_FLAG_UNIT);
+                        t->setUnitTarget(target->getGuid());
                     }
                 }
             }
@@ -615,14 +622,14 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
                 Unit* target = u_caster->GetMapMgr()->GetUnit(GetSinglePossibleFriend(i));
                 if (target != nullptr)
                 {
-                    t->m_targetMask |= TARGET_FLAG_UNIT;
-                    t->m_unitTarget = target->getGuid();
+                    t->addTargetMask(TARGET_FLAG_UNIT);
+                    t->setUnitTarget(target->getGuid());
                     result = true;
                 }
                 else
                 {
-                    t->m_targetMask |= TARGET_FLAG_UNIT;
-                    t->m_unitTarget = u_caster->getGuid();
+                    t->addTargetMask(TARGET_FLAG_UNIT);
+                    t->setUnitTarget(u_caster->getGuid());
                     result = true;
                 }
             }
@@ -647,7 +654,7 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
                 lv.y = m_caster->GetPositionY() + (sinf(ang) * r);
                 lv.z = m_caster->GetMapMgr()->GetLandHeight(lv.x, lv.y, m_caster->GetPositionZ() + 2.0f);
                 t->setDestination(lv);
-                t->m_targetMask = TARGET_FLAG_DEST_LOCATION;
+                t->setTargetMask(TARGET_FLAG_DEST_LOCATION);
 
                 VMAP::IVMapManager* mgr = VMAP::VMapFactory::createOrGetVMapManager();
                 isInLOS = mgr->isInLineOfSight(m_caster->GetMapId(), m_caster->GetPositionX(), m_caster->GetPositionY(), m_caster->GetPositionZ(), lv.x, lv.y, lv.z);
@@ -663,7 +670,7 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
                 Object* target = u_caster->GetMapMgr()->_GetObject(u_caster->getChannelObjectGuid());
                 if (target)
                 {
-                    t->m_targetMask |= TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_UNIT;
+                    t->addTargetMask(TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_UNIT);
                     t->setDestination(target->GetPosition());
                 }
                 result = true;
@@ -672,13 +679,13 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
             {
                 if (u_caster->GetAIInterface()->getNextTarget() != nullptr && TargetType & SPELL_TARGET_REQUIRE_ATTACKABLE)
                 {
-                    t->m_targetMask |= TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_UNIT;
+                    t->addTargetMask(TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_UNIT);
                     t->setDestination(u_caster->GetAIInterface()->getNextTarget()->GetPosition());
                     result = true;
                 }
                 else if (TargetType & SPELL_TARGET_REQUIRE_FRIENDLY)
                 {
-                    t->m_targetMask |= TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_UNIT;
+                    t->addTargetMask(TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_UNIT);
                     t->setDestination(u_caster->GetPosition());
                     result = true;
                 }
@@ -686,8 +693,8 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
         }
         else if (TargetType & SPELL_TARGET_AREA_SELF)
         {
-            t->m_targetMask |= TARGET_FLAG_SOURCE_LOCATION | TARGET_FLAG_UNIT;
-            t->m_unitTarget = u_caster->getGuid();
+            t->addTargetMask(TARGET_FLAG_SOURCE_LOCATION | TARGET_FLAG_UNIT);
+            t->setUnitTarget(u_caster->getGuid());
             t->setSource(u_caster->GetPosition());
             t->setDestination(u_caster->GetPosition());
             result = true;
@@ -699,15 +706,15 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
             {
                 if (u_caster->GetAIInterface()->getNextTarget() != nullptr)
                 {
-                    t->m_targetMask |= TARGET_FLAG_UNIT;
-                    t->m_unitTarget = u_caster->GetAIInterface()->getNextTarget()->getGuid();
+                    t->addTargetMask(TARGET_FLAG_UNIT);
+                    t->setUnitTarget(u_caster->GetAIInterface()->getNextTarget()->getGuid());
                     result = true;
                 }
             }
             else
             {
-                t->m_targetMask |= TARGET_FLAG_UNIT;
-                t->m_unitTarget = u_caster->getGuid();
+                t->addTargetMask(TARGET_FLAG_UNIT);
+                t->setUnitTarget(u_caster->getGuid());
                 result = true;
             }
         }
@@ -716,7 +723,7 @@ bool Spell::GenerateTargets(SpellCastTargets* t)
         {
             if (u_caster->GetAIInterface()->getNextTarget() != nullptr)
             {
-                t->m_targetMask |= TARGET_FLAG_DEST_LOCATION;
+                t->addTargetMask(TARGET_FLAG_DEST_LOCATION);
                 t->setDestination(u_caster->GetAIInterface()->getNextTarget()->GetPosition());
                 result = true;
             }
