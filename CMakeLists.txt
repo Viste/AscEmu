@@ -2,25 +2,30 @@
 cmake_minimum_required(VERSION 3.2...3.17)
 
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
-	cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+  cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
+
+project(AscEmu VERSION 1.0
+  DESCRIPTION "AscEmu project."
+  LANGUAGES CXX
+)
 
 # Enable folder structure.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# set runtime binary where all compiled (before install) binary will compiled in
+# Set output folder for binaries to build in.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # set build type on unix if it wasn't defined by user
 if(UNIX)
-    if(NOT CMAKE_BUILD_TYPE)
-        message(STATUS "Build configuration was not detected, setting to \"Release\"")
-        set(CMAKE_BUILD_TYPE "Release")
-    else()
-        message(STATUS "Detected ${CMAKE_BUILD_TYPE} configuration")
-    endif()
-    # Link atomic library
-    set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
+  if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "Build configuration was not detected, setting to \"Release\"")
+    set(CMAKE_BUILD_TYPE "Release")
+  else()
+    message(STATUS "Detected ${CMAKE_BUILD_TYPE} configuration")
+  endif()
+  # Link atomic library
+  set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
 endif()
 
 # cmake options
@@ -46,6 +51,6 @@ add_subdirectory(src/scripts)
 
 # install libraries for windows build (libmysql.dll, libey32.dll)
 if(WIN32)
-    install(FILES ${INSTALLED_DEPENDENCIES} DESTINATION .)
-    install(DIRECTORY ${INSTALL_DB_FILES} DESTINATION sql FILES_MATCHING PATTERN "*.sql")
+  install(FILES ${INSTALLED_DEPENDENCIES} DESTINATION .)
+  install(DIRECTORY ${INSTALL_DB_FILES} DESTINATION sql FILES_MATCHING PATTERN "*.sql")
 endif()

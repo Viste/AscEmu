@@ -3,8 +3,6 @@
 # set up our project name
 project(world CXX)
 
-include(Game${ASCEMU_VERSION}/CMakeLists.txt)
-
 include(AI/CMakeLists.txt)
 include(Chat/CMakeLists.txt)
 include(Chat/Commands/CMakeLists.txt)
@@ -32,17 +30,20 @@ include(Spell/CMakeLists.txt)
 include(Spell/Customization/CMakeLists.txt)
 include(Spell/Definitions/CMakeLists.txt)
 include(Storage/CMakeLists.txt)
+include(Storage/DBC/CMakeLists.txt)
+include(Units/CMakeLists.txt)
+include(Units/Creatures/CMakeLists.txt)
+include(Units/Players/CMakeLists.txt)
+include(Units/Summons/CMakeLists.txt)
+
+# Version-specific includes.
+include(Game${ASCEMU_VERSION}/CMakeLists.txt)
 if("${ASCEMU_VERSION}" STREQUAL "Cata")
    include(Storage/DB2/CMakeLists.txt)
 endif()
 if("${ASCEMU_VERSION}" STREQUAL "Mop")
    include(Storage/DB2/CMakeLists.txt)
 endif()
-include(Storage/DBC/CMakeLists.txt)
-include(Units/CMakeLists.txt)
-include(Units/Creatures/CMakeLists.txt)
-include(Units/Players/CMakeLists.txt)
-include(Units/Summons/CMakeLists.txt)
 
 set(SRC_WORLD_PROJECT
    ${CMAKE_CURRENT_SOURCE_DIR}/StdAfx.cpp
