@@ -53,7 +53,6 @@ if(WIN32)
    set(SRC_WORLD_PROJECT ${SRC_WORLD_PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/resources.rc)
 endif()
 
-source_group(world FILES ${SRC_WORLD_PROJECT})
 
 set(sources
    ${SRC_GAMECLASSIC_FILES}

@@ -7,5 +7,4 @@ set(SRC_NORTHREND_FH_HALLSOFREFLECTION_FILES
    ${PATH_PREFIX}/HallsOfReflection.h
 )
 
-source_group(Northrend\\FrozenHalls\\HallsOfReflection FILES ${SRC_NORTHREND_FH_HALLSOFREFLECTION_FILES})
 unset(PATH_PREFIX)

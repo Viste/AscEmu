@@ -7,5 +7,4 @@ set(SRC_OUTLAND_CR_THEUNDERBOG_FILES
    ${PATH_PREFIX}/TheUnderbog.h
 )
 
-source_group(Outland\\CoilfangReservoir\\TheUnderbog FILES ${SRC_OUTLAND_CR_THEUNDERBOG_FILES})
 unset(PATH_PREFIX)

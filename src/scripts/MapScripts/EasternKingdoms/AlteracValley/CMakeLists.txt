@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_ALTERACVALLEY_FILES
    ${PATH_PREFIX}/AlteracValley.h
 )
 
-source_group(EasternKingdoms\\AlteracValley FILES ${SRC_EASTERKINGDOMS_ALTERACVALLEY_FILES})
 unset(PATH_PREFIX)

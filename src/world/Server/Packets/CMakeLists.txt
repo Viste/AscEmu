@@ -415,5 +415,4 @@ set(SRC_PACKET_FILES
    ${PATH_PREFIX}/SmsgWorldStateUiTimerUpdate.h
 )
 
-source_group(Server\\Packets FILES ${SRC_PACKET_FILES})
 unset(PATH_PREFIX)

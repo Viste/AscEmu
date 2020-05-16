@@ -8,5 +8,4 @@ set(SRC_EyeOfTheStorm
     ${PATH_PREFIX}/EyeOfTheStormDefinitions.h
 )
 
-source_group(EyeOfTheStorm FILES ${SRC_EyeOfTheStorm})
 unset(PATH_PREFIX)

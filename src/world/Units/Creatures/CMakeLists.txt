@@ -18,5 +18,4 @@ set(SRC_UNITS_CREATURES_FILES
    ${PATH_PREFIX}/Vehicle.h
 )
 
-source_group(Units\\Creatures FILES ${SRC_UNITS_CREATURES_FILES})
 unset(PATH_PREFIX)

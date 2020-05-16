@@ -7,5 +7,4 @@ set(SRC_OUTLAND_TK_THEBOTANICA_FILES
    ${PATH_PREFIX}/TheBotanica.h
 )
 
-source_group(Outland\\TempestKeep\\TheBotanica FILES ${SRC_OUTLAND_TK_THEBOTANICA_FILES})
 unset(PATH_PREFIX)

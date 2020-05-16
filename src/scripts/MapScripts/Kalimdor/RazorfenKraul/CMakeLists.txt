@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_RAZORFENKRAUL_FILES
    ${PATH_PREFIX}/RazorfenKraul.h
 )
 
-source_group(Kalimdor\\RazorfenKraul FILES ${SRC_KALIMDOR_RAZORFENKRAUL_FILES})
 unset(PATH_PREFIX)

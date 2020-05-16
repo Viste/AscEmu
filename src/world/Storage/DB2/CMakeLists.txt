@@ -11,5 +11,4 @@ set(SRC_STORAGE_DB2_FILES
    ${PATH_PREFIX}/DB2Structures.h
 )
 
-source_group(Storage\\DB2 FILES ${SRC_STORAGE_DB2_FILES})
 unset(PATH_PREFIX)

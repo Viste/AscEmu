@@ -15,5 +15,4 @@ set(SRC_STORAGE_DBC_FILES
    ${PATH_PREFIX}/DBCStructures.hpp
 )
 
-source_group(Storage\\DBC FILES ${SRC_STORAGE_DBC_FILES})
 unset(PATH_PREFIX)

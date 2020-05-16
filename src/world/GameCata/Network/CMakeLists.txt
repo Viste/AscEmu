@@ -8,5 +8,4 @@ set(SRC_GAMECATA_NETWORK_FILES
     ${PATH_PREFIX}/WorldPacketHandlers.cpp
 )
 
-source_group(GameCata\\Network FILES ${SRC_GAMECATA_NETWORK_FILES})
 unset(PATH_PREFIX)

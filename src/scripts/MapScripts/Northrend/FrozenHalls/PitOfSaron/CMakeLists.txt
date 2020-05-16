@@ -7,5 +7,4 @@ set(SRC_NORTHREND_FH_PITOFSARON_FILES
    ${PATH_PREFIX}/PitOfSaron.h
 )
 
-source_group(Northrend\\FrozenHalls\\PitOfSaron FILES ${SRC_NORTHREND_FH_PITOFSARON_FILES})
 unset(PATH_PREFIX)

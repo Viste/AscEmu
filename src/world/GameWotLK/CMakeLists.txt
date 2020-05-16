@@ -9,5 +9,4 @@ set(SRC_GAMELK_FILES
     ${PATH_PREFIX}/UpdateFields.h
 )
 
-source_group(GameWotLK FILES ${SRC_GAMELK_FILES})
 unset(PATH_PREFIX)

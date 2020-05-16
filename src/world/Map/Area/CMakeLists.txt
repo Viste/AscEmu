@@ -8,5 +8,4 @@ set(SRC_MAP_AREA_FILES
    ${PATH_PREFIX}/AreaStorage.hpp
 )
 
-source_group(Map\\Area FILES ${SRC_MAP_AREA_FILES})
 unset(PATH_PREFIX)

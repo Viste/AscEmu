@@ -42,5 +42,4 @@ set(SRC_SPELL_DEFINITIONS_FILES
     ${PATH_PREFIX}/TeleportEffectCustomFlags.h
 )
 
-source_group(Spell\\Definitions FILES ${SRC_SPELL_DEFINITIONS_FILES})
 unset(PATH_PREFIX)

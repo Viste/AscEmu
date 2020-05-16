@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_RUINSOFAHNQIRAJ_FILES
    ${PATH_PREFIX}/RuinsOfAhnQiraj.h
 )
 
-source_group(Kalimdor\\RuinsOfAhnQiraj FILES ${SRC_KALIMDOR_RUINSOFAHNQIRAJ_FILES})
 unset(PATH_PREFIX)

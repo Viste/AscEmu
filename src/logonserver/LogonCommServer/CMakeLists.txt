@@ -7,5 +7,4 @@ set(SRC_LOGON_COMM_SERVER_FILES
    ${PATH_PREFIX}/LogonCommServer.h
 )
 
-source_group(LogonCommServer FILES ${SRC_LOGON_COMM_SERVER_FILES})
 unset(PATH_PREFIX)

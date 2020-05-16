@@ -8,5 +8,4 @@ set(SRC_GAMEMOP_NETWORK_FILES
     ${PATH_PREFIX}/WorldPacketHandlers.cpp
 )
 
-source_group(GameMop\\Network FILES ${SRC_GAMEMOP_NETWORK_FILES})
 unset(PATH_PREFIX)

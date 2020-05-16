@@ -8,5 +8,4 @@ set(SRC_GAMEBC_NETWORK_FILES
     ${PATH_PREFIX}/WorldPacketHandlers.cpp
 )
 
-source_group(GameTBC\\Network FILES ${SRC_GAMEBC_NETWORK_FILES})
 unset(PATH_PREFIX)

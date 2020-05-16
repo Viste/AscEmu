@@ -7,5 +7,4 @@ set(SRC_RingOfTrials
     ${PATH_PREFIX}/RingOfTrials.h
 )
 
-source_group(RingOfTrials FILES ${SRC_RingOfTrials})
 unset(PATH_PREFIX)

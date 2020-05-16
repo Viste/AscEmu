@@ -7,5 +7,4 @@ set(SRC_NORTHREND_DRAKTHARONKEEP_FILES
    ${PATH_PREFIX}/DraktharonKeep.h
 )
 
-source_group(Northrend\\DraktharonKeep FILES ${SRC_NORTHREND_DRAKTHARONKEEP_FILES})
 unset(PATH_PREFIX)

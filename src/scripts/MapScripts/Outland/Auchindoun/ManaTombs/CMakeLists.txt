@@ -7,5 +7,4 @@ set(SRC_OUTLAND_AU_MANATOMBS_FILES
    ${PATH_PREFIX}/ManaTombs.h
 )
 
-source_group(Outland\\Auchindoun\\ManaTombs FILES ${SRC_OUTLAND_AU_MANATOMBS_FILES})
 unset(PATH_PREFIX)

@@ -7,5 +7,4 @@ set(SRC_NORTHREND_NX_EYEOFETERNITY_FILES
    ${PATH_PREFIX}/EyeOfEternity.h
 )
 
-source_group(Northrend\\Nexus\\EyeOfEternity FILES ${SRC_NORTHREND_NX_EYEOFETERNITY_FILES})
 unset(PATH_PREFIX)

@@ -17,8 +17,6 @@ if(WIN32)
    set(SRC_LOGON_PROJECT ${SRC_LOGON_PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/resources.rc)
 endif()
 
-source_group(logon FILES ${SRC_LOGON_PROJECT})
-
 set(sources
    ${SRC_AUTH_FILES}
    ${SRC_CONSOLE_FILES}

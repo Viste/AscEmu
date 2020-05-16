@@ -8,5 +8,4 @@ set(SRC_GAMECLASSIC_NETWORK_FILES
     ${PATH_PREFIX}/WorldPacketHandlers.cpp
 )
 
-source_group(GameClassic\\Network FILES ${SRC_GAMECLASSIC_NETWORK_FILES})
 unset(PATH_PREFIX)

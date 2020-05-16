@@ -7,5 +7,4 @@ set(SRC_NORTHREND_VAULTOFARCHAVON_FILES
    ${PATH_PREFIX}/VaultOfArchavon.h
 )
 
-source_group(Northrend\\VaultOfArchavon FILES ${SRC_NORTHREND_VAULTOFARCHAVON_FILES})
 unset(PATH_PREFIX)

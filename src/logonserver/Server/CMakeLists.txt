@@ -19,5 +19,4 @@ set(SRC_SERVER_FILES
    ${PATH_PREFIX}/RealmsMgr.h
 )
 
-source_group(Server FILES ${SRC_SERVER_FILES})
 unset(PATH_PREFIX)

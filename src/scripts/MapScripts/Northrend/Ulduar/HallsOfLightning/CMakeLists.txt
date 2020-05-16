@@ -7,5 +7,4 @@ set(SRC_NORTHREND_UL_HALLSOFLIGHTNING_FILES
    ${PATH_PREFIX}/HallsOfLightning.h
 )
 
-source_group(Northrend\\Ulduar\\HallsOfLightning FILES ${SRC_NORTHREND_UL_HALLSOFLIGHTNING_FILES})
 unset(PATH_PREFIX)

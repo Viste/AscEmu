@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_KARAZHAN_FILES
    ${PATH_PREFIX}/Karazhan.h
 )
 
-source_group(EasternKingdoms\\Karazhan FILES ${SRC_EASTERKINGDOMS_KARAZHAN_FILES})
 unset(PATH_PREFIX)

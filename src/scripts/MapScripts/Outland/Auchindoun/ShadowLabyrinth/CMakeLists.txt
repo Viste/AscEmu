@@ -7,5 +7,4 @@ set(SRC_OUTLAND_AU_SHADOWLABYRINTH_FILES
    ${PATH_PREFIX}/ShadowLabyrinth.h
 )
 
-source_group(Outland\\Auchindoun\\ShadowLabyrinth FILES ${SRC_OUTLAND_AU_SHADOWLABYRINTH_FILES})
 unset(PATH_PREFIX)

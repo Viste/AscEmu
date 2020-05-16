@@ -32,5 +32,4 @@ set(SRC_COMMAND_FILES
    ${PATH_PREFIX}/WaypointCommands.cpp
 )
 
-source_group(Chat\\Commands FILES ${SRC_COMMAND_FILES})
 unset(PATH_PREFIX)

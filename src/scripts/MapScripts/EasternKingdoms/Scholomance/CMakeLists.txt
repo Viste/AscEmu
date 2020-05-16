@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_SCHOLOMANCE_FILES
    ${PATH_PREFIX}/Scholomance.h
 )
 
-source_group(EasternKingdoms\\Scholomance FILES ${SRC_EASTERKINGDOMS_SCHOLOMANCE_FILES})
 unset(PATH_PREFIX)

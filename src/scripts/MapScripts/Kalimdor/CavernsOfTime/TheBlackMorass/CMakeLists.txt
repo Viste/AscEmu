@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_COT_BLACKMORASS_FILES
    ${PATH_PREFIX}/TheBlackMorass.h
 )
 
-source_group(Kalimdor\\CavernsOfTime\\TheBlackMorass FILES ${SRC_KALIMDOR_COT_BLACKMORASS_FILES})
 unset(PATH_PREFIX)

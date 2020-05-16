@@ -7,5 +7,4 @@ set(SRC_RuinsOfLordaeron
     ${PATH_PREFIX}/RuinsOfLordaeron.h
 )
 
-source_group(RuinsOfLordaeron FILES ${SRC_RuinsOfLordaeron})
 unset(PATH_PREFIX)

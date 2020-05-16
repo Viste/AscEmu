@@ -12,5 +12,4 @@ set(SRC_MANAGEMENT_LFG_FILES
    ${PATH_PREFIX}/LFGPlayerData.h
 )
 
-source_group(Management\\LFG FILES ${SRC_MANAGEMENT_LFG_FILES})
 unset(PATH_PREFIX)

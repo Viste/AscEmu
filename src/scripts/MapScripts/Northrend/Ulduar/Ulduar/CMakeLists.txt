@@ -7,5 +7,4 @@ set(SRC_NORTHREND_UL_ULDUAR_FILES
    ${PATH_PREFIX}/Ulduar.h
 )
 
-source_group(Northrend\\Ulduar\\Ulduar FILES ${SRC_NORTHREND_UL_ULDUAR_FILES})
 unset(PATH_PREFIX)

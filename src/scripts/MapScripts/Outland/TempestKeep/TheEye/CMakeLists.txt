@@ -7,5 +7,4 @@ set(SRC_OUTLAND_TK_THEEYE_FILES
    ${PATH_PREFIX}/TheEye.h
 )
 
-source_group(Outland\\TempestKeep\\TheEye FILES ${SRC_OUTLAND_TK_THEEYE_FILES})
 unset(PATH_PREFIX)

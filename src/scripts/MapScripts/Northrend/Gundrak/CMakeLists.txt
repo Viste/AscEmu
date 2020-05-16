@@ -7,5 +7,4 @@ set(SRC_NORTHREND_GUNDRAK_FILES
    ${PATH_PREFIX}/Gundrak.h
 )
 
-source_group(Northrend\\Gundrak FILES ${SRC_NORTHREND_GUNDRAK_FILES})
 unset(PATH_PREFIX)

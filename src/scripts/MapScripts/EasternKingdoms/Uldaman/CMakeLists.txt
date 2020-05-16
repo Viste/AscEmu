@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_ULDAMAN_FILES
    ${PATH_PREFIX}/Uldaman.h
 )
 
-source_group(EasternKingdoms\\Uldaman FILES ${SRC_EASTERKINGDOMS_ULDAMAN_FILES})
 unset(PATH_PREFIX)

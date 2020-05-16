@@ -7,5 +7,4 @@ set(SRC_GAMECATA_MOVEMENT_FILES
     ${PATH_PREFIX}/MovementStructures.h
 )
 
-source_group(GameCata\\Movement FILES ${SRC_GAMECATA_MOVEMENT_FILES})
 unset(PATH_PREFIX)

@@ -19,5 +19,4 @@ set(SRC_SPELL_SCRIPTS_LEGACY_FILES
    ${PATH_PREFIX}/MiscSpells.cpp
 )
 
-source_group(LegacyFiles FILES ${SRC_SPELL_SCRIPTS_LEGACY_FILES})
 unset(PATH_PREFIX)

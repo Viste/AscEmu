@@ -15,5 +15,4 @@ set(SRC_SERVER_CONSOLE_FILES
    ${PATH_PREFIX}/ConsoleThread.h
 )
 
-source_group(Server\\Console FILES ${SRC_SERVER_CONSOLE_FILES})
 unset(PATH_PREFIX)

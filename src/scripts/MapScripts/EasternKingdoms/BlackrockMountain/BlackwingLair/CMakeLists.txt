@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_BM_BLACKWINGLAIR_FILES
    ${PATH_PREFIX}/BlackwingLair.h
 )
 
-source_group(EasternKingdoms\\BlackrockMountains\\BlackwingLair FILES ${SRC_EASTERKINGDOMS_BM_BLACKWINGLAIR_FILES})
 unset(PATH_PREFIX)

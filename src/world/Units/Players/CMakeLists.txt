@@ -16,5 +16,4 @@ set(SRC_UNITS_PLAYERS_FILES
    ${PATH_PREFIX}/ReputationHandler.hpp
 )
 
-source_group(Units\\Players FILES ${SRC_UNITS_PLAYERS_FILES})
 unset(PATH_PREFIX)

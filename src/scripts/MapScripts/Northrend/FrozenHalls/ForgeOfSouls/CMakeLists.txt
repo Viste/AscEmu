@@ -7,5 +7,4 @@ set(SRC_NORTHREND_FH_FORGEOFSOULS_FILES
    ${PATH_PREFIX}/ForgeOfSouls.h
 )
 
-source_group(Northrend\\FrozenHalls\\ForgeOfSouls FILES ${SRC_NORTHREND_FH_FORGEOFSOULS_FILES})
 unset(PATH_PREFIX)

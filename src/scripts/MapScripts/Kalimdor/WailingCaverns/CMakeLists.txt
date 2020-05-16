@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_WAILINGCAVERNS_FILES
    ${PATH_PREFIX}/WailingCaverns.h
 )
 
-source_group(Kalimdor\\WailingCaverns FILES ${SRC_KALIMDOR_WAILINGCAVERNS_FILES})
 unset(PATH_PREFIX)

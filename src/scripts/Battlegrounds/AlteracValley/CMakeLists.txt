@@ -8,5 +8,4 @@ set(SRC_AlteracValley
     ${PATH_PREFIX}/AlteracValleyDefinitions.h
 )
 
-source_group(AlteracValley FILES ${SRC_AlteracValley})
 unset(PATH_PREFIX)

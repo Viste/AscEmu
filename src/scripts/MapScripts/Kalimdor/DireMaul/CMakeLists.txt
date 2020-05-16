@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_DIREMAUL_FILES
    ${PATH_PREFIX}/DireMaul.h
 )
 
-source_group(Kalimdor\\DireMaul FILES ${SRC_KALIMDOR_DIREMAUL_FILES})
 unset(PATH_PREFIX)

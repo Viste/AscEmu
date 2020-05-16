@@ -7,5 +7,4 @@ set(SRC_NORTHREND_COA_OBSIDIANSANCTUM_FILES
    ${PATH_PREFIX}/ObsidianSanctum.h
 )
 
-source_group(Northrend\\ChamberOfAspects\\ObsidianSanctum FILES ${SRC_NORTHREND_COA_OBSIDIANSANCTUM_FILES})
 unset(PATH_PREFIX)

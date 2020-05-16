@@ -10,5 +10,4 @@ set(SRC_SERVER_SCRIPT_FILES
    ${PATH_PREFIX}/ScriptSetup.h
 )
 
-source_group(Server\\Script FILES ${SRC_SERVER_SCRIPT_FILES})
 unset(PATH_PREFIX)

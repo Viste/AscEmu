@@ -10,5 +10,4 @@ set(SRC_MANAGEMENT_GOSSIP_FILES
    ${PATH_PREFIX}/GossipScript.h
 )
 
-source_group(Management\\Gossip FILES ${SRC_MANAGEMENT_GOSSIP_FILES})
 unset(PATH_PREFIX)

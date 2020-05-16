@@ -21,5 +21,4 @@ set(SRC_OBJECTS_FILES
    ${PATH_PREFIX}/ObjectDefines.h
 )
 
-source_group(Objects FILES ${SRC_OBJECTS_FILES})
 unset(PATH_PREFIX)

@@ -20,5 +20,4 @@ set(SRC_UNITS_SUMMONS_FILES
    ${PATH_PREFIX}/WildSummon.h
 )
 
-source_group(Units\\Summons FILES ${SRC_UNITS_SUMMONS_FILES})
 unset(PATH_PREFIX)

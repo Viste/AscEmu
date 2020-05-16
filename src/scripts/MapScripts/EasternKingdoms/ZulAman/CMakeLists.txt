@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_ZULAMAN_FILES
    ${PATH_PREFIX}/ZulAman.h
 )
 
-source_group(EasternKingdoms\\ZulAman FILES ${SRC_EASTERKINGDOMS_ZULAMAN_FILES})
 unset(PATH_PREFIX)

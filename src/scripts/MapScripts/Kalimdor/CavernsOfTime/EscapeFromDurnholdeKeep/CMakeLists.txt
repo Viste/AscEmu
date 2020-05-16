@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_COT_ESCAPEFROMDURNHOLDKEEP_FILES
    ${PATH_PREFIX}/OldHillsbradFoothills.h
 )
 
-source_group(Kalimdor\\CavernsOfTime\\EscapeFromDurnholdeKeep FILES ${SRC_KALIMDOR_COT_ESCAPEFROMDURNHOLDKEEP_FILES})
 unset(PATH_PREFIX)

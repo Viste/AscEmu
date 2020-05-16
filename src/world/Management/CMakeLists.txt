@@ -89,5 +89,4 @@ set(SRC_MANAGEMENT_FILES
    ${PATH_PREFIX}/WorldStatesHandler.h
 )
 
-source_group(Management FILES ${SRC_MANAGEMENT_FILES})
 unset(PATH_PREFIX)

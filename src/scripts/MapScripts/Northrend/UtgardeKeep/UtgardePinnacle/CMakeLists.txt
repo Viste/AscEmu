@@ -7,5 +7,4 @@ set(SRC_NORTHREND_UK_UTGARDEPINNACLE_FILES
    ${PATH_PREFIX}/UtgardePinnacle.h
 )
 
-source_group(Northrend\\UtgardeKeep\\UtgardePinnacle FILES ${SRC_NORTHREND_UK_UTGARDEPINNACLE_FILES})
 unset(PATH_PREFIX)

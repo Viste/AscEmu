@@ -11,5 +11,4 @@ set(SRC_STORAGE_FILES
    ${PATH_PREFIX}/WorldStrings.h
 )
 
-source_group(Storage FILES ${SRC_STORAGE_FILES})
 unset(PATH_PREFIX)

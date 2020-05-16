@@ -35,5 +35,4 @@ set(SRC_PACKET_HANDLER_FILES
    #${PATH_PREFIX}/VoiceChatHandler.Legacy.cpp //Not used!
 )
 
-source_group(Server\\Packets\\Handlers FILES ${SRC_PACKET_HANDLER_FILES})
 unset(PATH_PREFIX)

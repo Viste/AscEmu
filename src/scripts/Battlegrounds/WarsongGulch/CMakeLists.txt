@@ -8,5 +8,4 @@ set(SRC_WarsongGulch
     ${PATH_PREFIX}/WarsongGulchDefinitions.h
 )
 
-source_group(WarsongGulch FILES ${SRC_WarsongGulch})
 unset(PATH_PREFIX)

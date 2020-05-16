@@ -11,5 +11,4 @@ set(SRC_MOVEMENT_SPLINE_FILES
    ${PATH_PREFIX}/MonsterMoveFaceType.h
 )
 
-source_group(Movement\\Spline FILES ${SRC_MOVEMENT_SPLINE_FILES})
 unset(PATH_PREFIX)

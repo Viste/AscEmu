@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_BLACKFATHOMDEEPS_FILES
    ${PATH_PREFIX}/BlackfathomDeeps.h
 )
 
-source_group(Kalimdor\\BlackfathomDeeps FILES ${SRC_KALIMDOR_BLACKFATHOMDEEPS_FILES})
 unset(PATH_PREFIX)

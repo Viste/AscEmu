@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_DEADMINES_FILES
    ${PATH_PREFIX}/Deadmines.h
 )
 
-source_group(EasternKingdoms\\Deadmines FILES ${SRC_EASTERKINGDOMS_DEADMINES_FILES})
 unset(PATH_PREFIX)

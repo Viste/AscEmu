@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_GNOMREGAN_FILES
    ${PATH_PREFIX}/Gnomregan.h
 )
 
-source_group(EasternKingdoms\\Gnomregan FILES ${SRC_EASTERKINGDOMS_GNOMREGAN_FILES})
 unset(PATH_PREFIX)

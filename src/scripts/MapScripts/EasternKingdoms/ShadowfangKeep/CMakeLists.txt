@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_SHADOWFANGKEEP_FILES
    ${PATH_PREFIX}/ShadowfangKeep.h
 )
 
-source_group(EasternKingdoms\\ShadowfangKeep FILES ${SRC_EASTERKINGDOMS_SHADOWFANGKEEP_FILES})
 unset(PATH_PREFIX)

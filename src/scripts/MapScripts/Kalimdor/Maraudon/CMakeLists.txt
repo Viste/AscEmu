@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_MARAUDON_FILES
    ${PATH_PREFIX}/Maraudon.h
 )
 
-source_group(Kalimdor\\Maraudon FILES ${SRC_KALIMDOR_MARAUDON_FILES})
 unset(PATH_PREFIX)

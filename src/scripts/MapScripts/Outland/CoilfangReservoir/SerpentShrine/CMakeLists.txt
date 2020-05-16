@@ -7,5 +7,4 @@ set(SRC_OUTLAND_CR_SERPENTSHRINE_FILES
    ${PATH_PREFIX}/SerpentShrine.h
 )
 
-source_group(Outland\\CoilfangReservoir\\SerpentShrine FILES ${SRC_OUTLAND_CR_SERPENTSHRINE_FILES})
 unset(PATH_PREFIX)

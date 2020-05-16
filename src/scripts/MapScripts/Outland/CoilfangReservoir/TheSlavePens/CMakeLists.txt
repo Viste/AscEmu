@@ -7,5 +7,4 @@ set(SRC_OUTLAND_CR_THESLAVEPENS_FILES
    ${PATH_PREFIX}/TheSlavePens.h
 )
 
-source_group(Outland\\CoilfangReservoir\\TheSlavePens FILES ${SRC_OUTLAND_CR_THESLAVEPENS_FILES})
 unset(PATH_PREFIX)

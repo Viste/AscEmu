@@ -7,5 +7,4 @@ set(SRC_NORTHREND_ICC_FILES
    ${PATH_PREFIX}/Icecrown_Citadel.h
 )
 
-source_group(Northrend\\IceCrownCitadel FILES ${SRC_NORTHREND_ICC_FILES})
 unset(PATH_PREFIX)

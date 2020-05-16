@@ -7,5 +7,4 @@ set(SRC_NORTHREND_NAXXRAMAS_FILES
    ${PATH_PREFIX}/Naxxramas.h
 )
 
-source_group(Northrend\\Naxxramas FILES ${SRC_NORTHREND_NAXXRAMAS_FILES})
 unset(PATH_PREFIX)

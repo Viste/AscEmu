@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_BM_BLACKROCKDEPTHS_FILES
    ${PATH_PREFIX}/BlackrockDepths.h
 )
 
-source_group(EasternKingdoms\\BlackrockMountains\\BlackrockDepths FILES ${SRC_EASTERKINGDOMS_BM_BLACKROCKDEPTHS_FILES})
 unset(PATH_PREFIX)

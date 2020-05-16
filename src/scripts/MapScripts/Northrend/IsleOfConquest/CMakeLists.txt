@@ -7,5 +7,4 @@ set(SRC_NORTHREND_ISLEOFCONQUEST_FILES
    ${PATH_PREFIX}/IsleOfConquest.h
 )
 
-source_group(Northrend\\IsleOfConquest FILES ${SRC_NORTHREND_ISLEOFCONQUEST_FILES})
 unset(PATH_PREFIX)

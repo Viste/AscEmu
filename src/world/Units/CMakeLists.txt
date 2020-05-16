@@ -11,5 +11,4 @@ set(SRC_UNITS_FILES
    ${PATH_PREFIX}/UnitDefines.hpp
 )
 
-source_group(Units FILES ${SRC_UNITS_FILES})
 unset(PATH_PREFIX)

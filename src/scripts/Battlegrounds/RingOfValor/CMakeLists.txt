@@ -7,5 +7,4 @@ set(SRC_RingOfValor
     ${PATH_PREFIX}/RingOfValor.h
 )
 
-source_group(RingOfValor FILES ${SRC_RingOfValor})
 unset(PATH_PREFIX)

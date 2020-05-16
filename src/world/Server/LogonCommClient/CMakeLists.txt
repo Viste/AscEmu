@@ -9,5 +9,4 @@ set(SRC_LOGON_COMMUNICATION_CLIENT_FILES
    ${PATH_PREFIX}/LogonCommHandler.h
 )
 
-source_group(Server\\LogonCommClient FILES ${SRC_LOGON_COMMUNICATION_CLIENT_FILES})
 unset(PATH_PREFIX)

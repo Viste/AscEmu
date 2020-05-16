@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_SUNKENTEMPLE_FILES
    ${PATH_PREFIX}/SunkenTemple.h
 )
 
-source_group(EasternKingdoms\\SunkenTemple FILES ${SRC_EASTERKINGDOMS_SUNKENTEMPLE_FILES})
 unset(PATH_PREFIX)

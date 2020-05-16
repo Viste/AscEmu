@@ -23,8 +23,6 @@ set(SRC_BATTLEGROUNDS
     ../../world/Spell/SpellCastTargets.cpp
 )
 
-source_group(Battlegrounds FILES ${SRC_BATTLEGROUNDS})
-
 set(SRC_BGS
     ${SRC_AlteracValley}
     ${SRC_ArathiBasin}

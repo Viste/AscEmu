@@ -8,5 +8,4 @@ set(SRC_StrandOfTheAncient
     ${PATH_PREFIX}/StrandOfTheAncientDefinitions.h
 )
 
-source_group(StrandOfTheAncient FILES ${SRC_StrandOfTheAncient})
 unset(PATH_PREFIX)

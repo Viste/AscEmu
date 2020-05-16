@@ -9,5 +9,4 @@ set(SRC_GAMEMOP_STORAGE_FILES
     ${PATH_PREFIX}/DBCStructures.h
 )
 
-source_group(GameMop\\Storage FILES ${SRC_GAMEMOP_STORAGE_FILES})
 unset(PATH_PREFIX)

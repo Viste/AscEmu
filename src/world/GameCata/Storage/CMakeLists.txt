@@ -9,5 +9,4 @@ set(SRC_GAMECATA_STORAGE_FILES
     ${PATH_PREFIX}/DBCStructures.h
 )
 
-source_group(GameCata\\Storage FILES ${SRC_GAMECATA_STORAGE_FILES})
 unset(PATH_PREFIX)

@@ -30,5 +30,4 @@ set(SRC_SPELL_FILES
    ${PATH_PREFIX}/SpellTargetConstraint.h
 )
 
-source_group(Spell FILES ${SRC_SPELL_FILES})
 unset(PATH_PREFIX)

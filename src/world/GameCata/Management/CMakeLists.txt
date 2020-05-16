@@ -7,5 +7,4 @@ set(SRC_GAMECATA_MANAGEMENT_FILES
     ${PATH_PREFIX}/GuildFinderMgr.h
 )
 
-source_group(GameCata\\Management FILES ${SRC_GAMECATA_MANAGEMENT_FILES})
 unset(PATH_PREFIX)

@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_COT_CULLINGOFSTRATHOLM_FILES
    ${PATH_PREFIX}/CullingOfStratholm.h
 )
 
-source_group(Kalimdor\\CavernsOfTime\\CullingOfStratholm FILES ${SRC_KALIMDOR_COT_CULLINGOFSTRATHOLM_FILES})
 unset(PATH_PREFIX)

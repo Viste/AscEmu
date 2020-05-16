@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_SUNWELLPLATEAU_FILES
    ${PATH_PREFIX}/SunwellPlateau.h
 )
 
-source_group(EasternKingdoms\\SunwellPlateau FILES ${SRC_EASTERKINGDOMS_SUNWELLPLATEAU_FILES})
 unset(PATH_PREFIX)

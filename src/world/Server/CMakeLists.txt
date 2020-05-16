@@ -34,5 +34,4 @@ set(SRC_SERVER_FILES
    ${PATH_PREFIX}/WorldSocket.h
 )
 
-source_group(Server FILES ${SRC_SERVER_FILES})
 unset(PATH_PREFIX)

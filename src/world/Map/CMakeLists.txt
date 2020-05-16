@@ -27,5 +27,4 @@ set(SRC_MAP_FILES
    ${PATH_PREFIX}/WorldCreatorDefines.hpp
 )
 
-source_group(Map FILES ${SRC_MAP_FILES})
 unset(PATH_PREFIX)

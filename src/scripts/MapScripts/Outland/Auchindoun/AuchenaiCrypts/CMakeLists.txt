@@ -7,5 +7,4 @@ set(SRC_OUTLAND_AU_AUCHENAICRYPTS_FILES
    ${PATH_PREFIX}/AuchenaiCrypts.h
 )
 
-source_group(Outland\\Auchindoun\\AuchenaiCrypts FILES ${SRC_OUTLAND_AU_AUCHENAICRYPTS_FILES})
 unset(PATH_PREFIX)

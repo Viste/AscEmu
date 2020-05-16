@@ -11,5 +11,4 @@ set(SRC_GAMECATA_FILES
     ${PATH_PREFIX}/UpdateFields.h
 )
 
-source_group(GameCata FILES ${SRC_GAMECATA_FILES})
 unset(PATH_PREFIX)

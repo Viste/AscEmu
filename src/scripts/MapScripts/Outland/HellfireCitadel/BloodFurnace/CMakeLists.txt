@@ -7,5 +7,4 @@ set(SRC_OUTLAND_HC_BLOODFURNANCE_FILES
    ${PATH_PREFIX}/BloodFurnace.h
 )
 
-source_group(Outland\\HellfireCitadel\\BloodFurnace FILES ${SRC_OUTLAND_HC_BLOODFURNANCE_FILES})
 unset(PATH_PREFIX)

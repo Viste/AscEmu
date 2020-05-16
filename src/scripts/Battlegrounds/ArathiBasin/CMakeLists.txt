@@ -8,5 +8,4 @@ set(SRC_ArathiBasin
     ${PATH_PREFIX}/ArathiBasinDefinitions.h
 )
 
-source_group(ArathiBasin FILES ${SRC_ArathiBasin})
 unset(PATH_PREFIX)

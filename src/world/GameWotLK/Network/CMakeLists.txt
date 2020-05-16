@@ -8,5 +8,4 @@ set(SRC_GAMELK_NETWORK_FILES
     ${PATH_PREFIX}/WorldPacketHandlers.cpp
 )
 
-source_group(GameWotLK\\Network FILES ${SRC_GAMELK_NETWORK_FILES})
 unset(PATH_PREFIX)

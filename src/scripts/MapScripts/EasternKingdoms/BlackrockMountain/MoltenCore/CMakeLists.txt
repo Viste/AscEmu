@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_BM_MOLTENCORE_FILES
    ${PATH_PREFIX}/MoltenCore.h
 )
 
-source_group(EasternKingdoms\\BlackrockMountains\\MoltenCore FILES ${SRC_EASTERKINGDOMS_BM_MOLTENCORE_FILES})
 unset(PATH_PREFIX)

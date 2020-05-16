@@ -7,5 +7,4 @@ set(SRC_NORTHREND_CC_TRIALOFTHECRUSADER_FILES
    ${PATH_PREFIX}/TrialOfTheCrusader.h
 )
 
-source_group(Northrend\\CrusadersColiseum\\TrialOfTheCrusader FILES ${SRC_NORTHREND_CC_TRIALOFTHECRUSADER_FILES})
 unset(PATH_PREFIX)

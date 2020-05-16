@@ -8,5 +8,4 @@ set(SRC_GAMECLASSIC_STORAGE_FILES
     ${PATH_PREFIX}/DBCStructures.h
 )
 
-source_group(GameClassic\\Storage FILES ${SRC_GAMECLASSIC_STORAGE_FILES})
 unset(PATH_PREFIX)

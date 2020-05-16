@@ -7,5 +7,4 @@ set(SRC_OUTLAND_HC_MAGTHERIDONSLAIR_FILES
    ${PATH_PREFIX}/MagtheridonsLair.h
 )
 
-source_group(Outland\\HellfireCitadel\\MagtheridonsLair FILES ${SRC_OUTLAND_HC_MAGTHERIDONSLAIR_FILES})
 unset(PATH_PREFIX)

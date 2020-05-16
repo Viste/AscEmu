@@ -7,5 +7,4 @@ set(SRC_OUTLAND_GRUULSLAIR_FILES
    ${PATH_PREFIX}/GruulsLair.h
 )
 
-source_group(Outland\\GruulsLair FILES ${SRC_OUTLAND_GRUULSLAIR_FILES})
 unset(PATH_PREFIX)

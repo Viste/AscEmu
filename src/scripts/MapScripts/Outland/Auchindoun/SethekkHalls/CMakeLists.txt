@@ -7,5 +7,4 @@ set(SRC_OUTLAND_AU_SETHEKKHALLS_FILES
    ${PATH_PREFIX}/SethekkHalls.h
 )
 
-source_group(Outland\\Auchindoun\\SethekkHalls FILES ${SRC_OUTLAND_AU_SETHEKKHALLS_FILES})
 unset(PATH_PREFIX)

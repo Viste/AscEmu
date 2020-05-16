@@ -7,5 +7,4 @@ set(SRC_OUTLAND_TK_THEMECHANAR_FILES
    ${PATH_PREFIX}/TheMechanar.h
 )
 
-source_group(Outland\\TempestKeep\\TheMechanar FILES ${SRC_OUTLAND_TK_THEMECHANAR_FILES})
 unset(PATH_PREFIX)

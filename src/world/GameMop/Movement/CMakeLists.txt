@@ -7,5 +7,4 @@ set(SRC_GAMEMOP_MOVEMENT_FILES
     ${PATH_PREFIX}/MovementStructures.h
 )
 
-source_group(GameMop\\Movement FILES ${SRC_GAMEMOP_MOVEMENT_FILES})
 unset(PATH_PREFIX)

@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_BM_BLACKROCKSPIRE_FILES
    ${PATH_PREFIX}/BlackrockSpire.h
 )
 
-source_group(EasternKingdoms\\BlackrockMountains\\BlackrockSpire FILES ${SRC_EASTERKINGDOMS_BM_BLACKROCKSPIRE_FILES})
 unset(PATH_PREFIX)

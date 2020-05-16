@@ -9,5 +9,4 @@ set(SRC_MOVEMENT_FILES
    ${PATH_PREFIX}/UnitMovementManager.hpp
 )
 
-source_group(Movement FILES ${SRC_MOVEMENT_FILES})
 unset(PATH_PREFIX)

@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_RAGEFIRECHASM_FILES
    ${PATH_PREFIX}/RagefireChasm.h
 )
 
-source_group(Kalimdor\\RagefireChasm FILES ${SRC_KALIMDOR_RAGEFIRECHASM_FILES})
 unset(PATH_PREFIX)

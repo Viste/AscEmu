@@ -16,5 +16,4 @@ set(SRC_DATA_FILES
    ${PATH_PREFIX}/MovementInfo.h
 )
 
-source_group(Data FILES ${SRC_DATA_FILES})
 unset(PATH_PREFIX)

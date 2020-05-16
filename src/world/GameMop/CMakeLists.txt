@@ -11,5 +11,4 @@ set(SRC_GAMEMOP_FILES
     ${PATH_PREFIX}/UpdateFields.h
 )
 
-source_group(GameMop FILES ${SRC_GAMEMOP_FILES})
 unset(PATH_PREFIX)

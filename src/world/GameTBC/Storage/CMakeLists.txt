@@ -8,5 +8,4 @@ set(SRC_GAMEBC_STORAGE_FILES
     ${PATH_PREFIX}/DBCStructures.h
 )
 
-source_group(GameTBC\\Storage FILES ${SRC_GAMEBC_STORAGE_FILES})
 unset(PATH_PREFIX)

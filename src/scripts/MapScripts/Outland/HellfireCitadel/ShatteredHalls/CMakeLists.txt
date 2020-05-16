@@ -7,5 +7,4 @@ set(SRC_OUTLAND_HC_SHATTEREDHALLS_FILES
    ${PATH_PREFIX}/ShatteredHalls.h
 )
 
-source_group(Outland\\HellfireCitadel\\ShatteredHalls FILES ${SRC_OUTLAND_HC_SHATTEREDHALLS_FILES})
 unset(PATH_PREFIX)

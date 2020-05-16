@@ -7,5 +7,4 @@ set(SRC_PACKET_MOVEMENT_FILES
    ${PATH_PREFIX}/CreatureMovement.h
 )
 
-source_group(Server\\Packets\\Movement FILES ${SRC_PACKET_MOVEMENT_FILES})
 unset(PATH_PREFIX)

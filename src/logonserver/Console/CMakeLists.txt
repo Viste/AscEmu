@@ -7,5 +7,4 @@ set(SRC_CONSOLE_FILES
    ${PATH_PREFIX}/LogonConsole.h
 )
 
-source_group(Console FILES ${SRC_CONSOLE_FILES})
 unset(PATH_PREFIX)

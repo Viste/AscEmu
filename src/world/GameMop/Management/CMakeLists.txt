@@ -7,5 +7,4 @@ set(SRC_GAMEMOP_MANAGEMENT_FILES
     ${PATH_PREFIX}/GuildFinderMgr.h
 )
 
-source_group(GameMop\\Management FILES ${SRC_GAMEMOP_MANAGEMENT_FILES})
 unset(PATH_PREFIX)

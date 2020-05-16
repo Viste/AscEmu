@@ -7,5 +7,4 @@ set(SRC_CircleOfBlood
     ${PATH_PREFIX}/CircleOfBlood.h
 )
 
-source_group(CircleOfBlood FILES ${SRC_CircleOfBlood})
 unset(PATH_PREFIX)

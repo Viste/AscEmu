@@ -7,5 +7,4 @@ set(SRC_DalaranSewers
     ${PATH_PREFIX}/DalaranSewers.h
 )
 
-source_group(DalaranSewers FILES ${SRC_DalaranSewers})
 unset(PATH_PREFIX)

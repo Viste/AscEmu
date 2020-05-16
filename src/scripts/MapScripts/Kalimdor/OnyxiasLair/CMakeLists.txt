@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_ONYXIASLIAR_FILES
    ${PATH_PREFIX}/OnyxiasLair.h
 )
 
-source_group(Kalimdor\\OnyxiasLair FILES ${SRC_KALIMDOR_ONYXIASLIAR_FILES})
 unset(PATH_PREFIX)

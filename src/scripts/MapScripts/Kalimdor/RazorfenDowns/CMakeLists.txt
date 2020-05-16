@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_RAZORFENDOWNS_FILES
    ${PATH_PREFIX}/RazorfenDowns.h
 )
 
-source_group(Kalimdor\\RazorfenDowns FILES ${SRC_KALIMDOR_RAZORFENDOWNS_FILES})
 unset(PATH_PREFIX)

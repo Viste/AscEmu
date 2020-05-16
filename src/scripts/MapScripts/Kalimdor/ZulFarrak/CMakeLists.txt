@@ -7,5 +7,4 @@ set(SRC_KALIMDOR_ZULFARAK_FILES
    ${PATH_PREFIX}/ZulFarrak.h
 )
 
-source_group(Kalimdor\\ZulFarrak FILES ${SRC_KALIMDOR_ZULFARAK_FILES})
 unset(PATH_PREFIX)

@@ -7,5 +7,4 @@ set(SRC_EASTERKINGDOMS_MAGISTERTERRACE_FILES
    ${PATH_PREFIX}/MagisterTerrace.h
 )
 
-source_group(EasternKingdoms\\MagisterTerrace FILES ${SRC_EASTERKINGDOMS_MAGISTERTERRACE_FILES})
 unset(PATH_PREFIX)

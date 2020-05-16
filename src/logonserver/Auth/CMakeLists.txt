@@ -11,5 +11,4 @@ set(SRC_AUTH_FILES
    ${PATH_PREFIX}/AutoPatcher.h
 )
 
-source_group(Auth FILES ${SRC_AUTH_FILES})
 unset(PATH_PREFIX)

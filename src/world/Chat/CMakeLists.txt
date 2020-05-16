@@ -11,5 +11,4 @@ set(SRC_CHAT_FILES
    ${PATH_PREFIX}/CommandTableStorage.hpp
 )
 
-source_group(Chat FILES ${SRC_CHAT_FILES})
 unset(PATH_PREFIX)

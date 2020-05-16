@@ -8,5 +8,4 @@ set(SRC_GAMELK_STORAGE_FILES
     ${PATH_PREFIX}/DBCStructures.h
 )
 
-source_group(GameWotLK\\Storage FILES ${SRC_GAMELK_STORAGE_FILES})
 unset(PATH_PREFIX)

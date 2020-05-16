@@ -8,5 +8,4 @@ set(SRC_IsleOfConquest
     ${PATH_PREFIX}/IsleOfConquestDefinitions.h
 )
 
-source_group(IsleOfConquest FILES ${SRC_IsleOfConquest})
 unset(PATH_PREFIX)

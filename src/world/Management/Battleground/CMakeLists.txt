@@ -9,5 +9,4 @@ set(SRC_MANAGEMENT_BATTLEGROUND_FILES
    ${PATH_PREFIX}/BattlegroundMgr.h
 )
 
-source_group(Management\\Battleground FILES ${SRC_MANAGEMENT_BATTLEGROUND_FILES})
 unset(PATH_PREFIX)
