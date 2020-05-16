@@ -19,7 +19,10 @@ include_directories(
    ${ZLIB_INCLUDE_DIRS}
 )
 
+# Create target.
 add_executable(${PROJECT_NAME} ${source})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Tools/Extractors")
+
 target_link_libraries(${PROJECT_NAME} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} storm)
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${ASCEMU_TOOLS_PATH})
 

@@ -13,7 +13,10 @@ include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Create target.
 add_library(${PROJECT_NAME} STATIC ${sources})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Dependencies")
+
 target_link_libraries( ${PROJECT_NAME} loadlib libmpq)
 
 unset(sources)

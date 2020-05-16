@@ -22,6 +22,9 @@ include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Create target.
 add_executable(${PROJECT_NAME} ${source})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Tools/Extractors")
+
 target_link_libraries(${PROJECT_NAME} shared g3dlite collision Detour Recast ${PCRE_LIBRARIES})
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${ASCEMU_TOOLS_PATH})

@@ -17,7 +17,10 @@ include_directories(
    ${ZLIB_INCLUDE_DIRS}
 )
 
+# Create target.
 add_executable(${PROJECT_NAME} ${sources})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Tools/Extractors")
+
 target_link_libraries(${PROJECT_NAME} collision g3dlite ${ZLIB_LIBRARIES})
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${ASCEMU_TOOLS_PATH})
 

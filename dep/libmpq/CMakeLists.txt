@@ -24,7 +24,10 @@ include_directories(
    ${ZLIB_INCLUDE_DIRS}
 )
 
+# Create target.
 add_library(${PROJECT_NAME} STATIC ${sources})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Dependencies")
+
 target_link_libraries(${PROJECT_NAME} ${ZLIB_LIBRARIES} loadlib ${BZIP2_LIBRARIES})
 
 unset(sources)
