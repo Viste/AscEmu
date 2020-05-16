@@ -1,7 +1,9 @@
 # Copyright (c) 2014-2020 AscEmu Team <http://www.ascemu.org>
 
-# set up our project name
-project(logon CXX)
+project(logon VERSION 1.0
+  DESCRIPTION "AscEmu logon server."
+  LANGUAGES CXX
+)
 
 include(Auth/CMakeLists.txt)
 include(Console/CMakeLists.txt)
@@ -9,53 +11,50 @@ include(LogonCommServer/CMakeLists.txt)
 include(Server/CMakeLists.txt)
 
 set(SRC_LOGON_PROJECT
-   ${CMAKE_CURRENT_SOURCE_DIR}/LogonStdAfx.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/LogonStdAfx.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/LogonStdAfx.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/LogonStdAfx.h
 )
 
 if(WIN32)
    set(SRC_LOGON_PROJECT ${SRC_LOGON_PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/resources.rc)
 endif()
 
-set(sources
-   ${SRC_AUTH_FILES}
-   ${SRC_CONSOLE_FILES}
-   ${SRC_LOGON_COMM_SERVER_FILES}
-   ${SRC_SERVER_FILES}
-   ${SRC_LOGON_PROJECT}
-)
-
-include_directories(
-   ${CMAKE_CURRENT_SOURCE_DIR}/Opcodes
-   ${CMAKE_SOURCE_DIR}/src/shared
-   ${ZLIB_INCLUDE_DIRS}
-   ${OPENSSL_INCLUDE_DIR}
-   ${PCRE_INCLUDE_DIR}
-   ${MYSQL_INCLUDE_DIR}
-   ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-link_directories(${EXTRA_LIBS_PATH} ${DEPENDENCY_LIBS})
-
 # Create target.
-add_executable(${PROJECT_NAME} ${sources})
+add_executable(${PROJECT_NAME} 
+  ${SRC_AUTH_FILES}
+  ${SRC_CONSOLE_FILES}
+  ${SRC_LOGON_COMM_SERVER_FILES}
+  ${SRC_SERVER_FILES}
+  ${SRC_LOGON_PROJECT}
+)
 set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Daemons")
 
-if(USE_PCH)
-    gen_cxx_pch(${PROJECT_NAME} LogonStdAfx.h ${CMAKE_CURRENT_SOURCE_DIR}/LogonStdAfx.cpp)
+# Include dependencies.
+target_include_directories(${PROJECT_NAME} PUBLIC 
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_SOURCE_DIR}/src/shared
+  ${OPENSSL_INCLUDE_DIR}
+  ${ZLIB_INCLUDE_DIRS}
+)
+
+# Link dependencies.
+target_link_libraries(${PROJECT_NAME} PUBLIC
+ shared
+ ${MYSQL_LIBRARIES}
+ ${ZLIB_LIBRARIES}
+ ${PCRE_LIBRARIES}
+)
+
+# Required for std::filesystem on *nix.
+if(NOT WIN32)
+  target_link_libraries(${PROJECT_NAME} stdc++fs)
 endif()
 
-if(NOT WIN32)
-    target_link_libraries(${PROJECT_NAME} stdc++fs)
+if(USE_PCH)
+  gen_cxx_pch(${PROJECT_NAME} LogonStdAfx.h ${CMAKE_CURRENT_SOURCE_DIR}/LogonStdAfx.cpp)
 endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/LogonConf.h.in ${CMAKE_CURRENT_SOURCE_DIR}/LogonConf.h)
 
-#Link our shared lib.
-target_link_libraries(${PROJECT_NAME} shared ${MYSQL_LIBRARIES} ${ZLIB_LIBRARIES} ${PCRE_LIBRARIES})
-
 #Provide make install rules.
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
-
-unset(sources)
-unset(headers)
