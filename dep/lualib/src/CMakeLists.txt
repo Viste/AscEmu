@@ -14,5 +14,6 @@ file(GLOB lua_sources
     "lua/*.c"
 )
 
-# Lua static library
+# Create target.
 add_library (${PROJECT_NAME} STATIC ${lua_sources})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Dependencies")

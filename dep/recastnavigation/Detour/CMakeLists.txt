@@ -7,7 +7,10 @@ include_directories(
    ${ZLIB_INCLUDE_DIRS}
 )
 
+# Create target.
 add_library(Detour STATIC ${Detour_SRCS})
+set_property(TARGET Detour PROPERTY FOLDER "Dependencies/Recast")
+
 target_link_libraries(Detour ${ZLIB_LIBRARIES})
 
 unset(Detour_SRCS)

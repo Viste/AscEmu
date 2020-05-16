@@ -84,7 +84,10 @@ include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}
    ${ZLIB_INCLUDE_DIRS}
 )
+
+# Create target.
 add_library(${PROJECT_NAME} SHARED ${sources} ${headers})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Game Scripts")
 
 target_link_libraries(${PROJECT_NAME} world)
 

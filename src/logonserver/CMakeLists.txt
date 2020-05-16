@@ -39,7 +39,9 @@ include_directories(
 
 link_directories(${EXTRA_LIBS_PATH} ${DEPENDENCY_LIBS})
 
+# Create target.
 add_executable(${PROJECT_NAME} ${sources})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Daemons")
 
 if(USE_PCH)
     gen_cxx_pch(${PROJECT_NAME} LogonStdAfx.h ${CMAKE_CURRENT_SOURCE_DIR}/LogonStdAfx.cpp)

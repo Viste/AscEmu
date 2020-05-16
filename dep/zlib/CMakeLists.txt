@@ -17,7 +17,10 @@ set(sources
    )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+# Create target.
 add_library(${PROJECT_NAME} STATIC ${sources} )
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Dependencies")
 
 #set it to the project name.
 set(ZLIB_LIBRARIES ${PROJECT_NAME} CACHE INTERNAL "Zlib Libraries")

@@ -7,7 +7,10 @@ include_directories(
    ${ZLIB_INCLUDE_DIRS}
 )
 
+# Create target.
 add_library(Recast STATIC ${Recast_SRCS})
+set_property(TARGET Recast PROPERTY FOLDER "Dependencies/Recast")
+
 target_link_libraries(Recast ${ZLIB_LIBRARIES})
 
 unset(Recast_SRCS)

@@ -55,7 +55,10 @@ include_directories(
    ${CMAKE_SOURCE_DIR}/dep/utf8cpp
 )
 
+# Create target.
 add_library(${PROJECT_NAME} SHARED ${SRCS} ${HEADERS})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Core")
+
 target_link_libraries(${PROJECT_NAME} world lualib)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${ASCEMU_SCRIPTLIB_PATH} LIBRARY DESTINATION ${ASCEMU_SCRIPTLIB_PATH})

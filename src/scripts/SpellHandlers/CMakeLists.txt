@@ -36,7 +36,11 @@ include_directories(
    ${ZLIB_INCLUDE_DIRS}
    ${CMAKE_SOURCE_DIR}/dep/utf8cpp
 )
+
+# Create target.
 add_library(${PROJECT_NAME} SHARED ${sources} ${headers})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Game Scripts")
+
 add_definitions(-DSCRIPTLIB -DSKIP_ALLOCATOR_SHARING)
 
 target_link_libraries(${PROJECT_NAME} world)

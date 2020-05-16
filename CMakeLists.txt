@@ -5,6 +5,9 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
 	cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
+# Enable folder structure.
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # set runtime binary where all compiled (before install) binary will compiled in
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 

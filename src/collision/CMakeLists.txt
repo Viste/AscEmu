@@ -27,6 +27,9 @@ include_directories(
   ${ZLIB_INCLUDE_DIRS}
 )
 
+# Create target.
 add_library(collision STATIC ${collision_STAT_SRCS})
+set_property(TARGET collision PROPERTY FOLDER "Core")
+
 target_link_libraries(collision g3dlite shared)
 

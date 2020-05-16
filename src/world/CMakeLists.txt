@@ -171,7 +171,9 @@ include_directories(
    ${ZLIB_INCLUDE_DIRS}
 )
 
+# Create target.
 add_executable(${PROJECT_NAME} ${sources})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Daemons")
 
 if(USE_PCH)
     gen_cxx_pch(${PROJECT_NAME} StdAfx.h ${CMAKE_CURRENT_SOURCE_DIR}/StdAfx.cpp)
