@@ -16,8 +16,13 @@ namespace AscEmu::Packets
     {
     public:
         WoWGuid auctioneerGuid;
+#if VERSION_STRING >= Cata
         uint64_t bidMoney;
         uint64_t buyoutPrice;
+#else
+        uint32_t bidMoney;
+        uint32_t buyoutPrice;
+#endif
         uint32_t itemsCount;
         uint32_t expireTime;
 
@@ -48,6 +53,7 @@ namespace AscEmu::Packets
         {
             uint64_t unpacked_guid;
             packet >> unpacked_guid >> itemsCount;
+            auctioneerGuid.Init(unpacked_guid);
 
             for (uint32_t i = 0; i < itemsCount; ++i)
             {
@@ -60,7 +66,6 @@ namespace AscEmu::Packets
 
             packet >> bidMoney >> buyoutPrice >> expireTime;
 
-            auctioneerGuid.Init(unpacked_guid);
             return true;
         }
     };

@@ -62,6 +62,11 @@
 #include "Units/Creatures/Pet.h"
 #include "Server/Packets/SmsgTaxinodeStatus.h"
 #include "Server/Packets/SmsgMoveKnockBack.h"
+#include "Server/Packets/SmsgBindPointUpdate.h"
+#include "Server/Packets/SmsgClearTarget.h"
+#include "Server/Packets/SmsgSpellStealLog.h"
+#include "Server/Packets/SmsgSpellDispellLog.h"
+#include "Server/Packets/SmsgNewTaxiPath.h"
 
 using AscEmu::World::Spell::Helpers::spellModFlatIntValue;
 using AscEmu::World::Spell::Helpers::spellModPercentageIntValue;
@@ -165,7 +170,7 @@ pSpellEffect SpellEffectsHandler[TOTAL_SPELL_EFFECTS] =
     &Spell::SpellEffectNULL,                    //  90 SPELL_EFFECT_NULL_90
     &Spell::SpellEffectNULL,                    //  91 SPELL_EFFECT_NULL_91
     &Spell::SpellEffectEnchantHeldItem,         //  92 SPELL_EFFECT_ENCHANT_HELD_ITEM
-    &Spell::SpellEffectSetMirrorName,           //  93 SPELL_EFFECT_SET_MIRROR_NAME
+    &Spell::SpellEffectForceDeselect,           //  93 SPELL_EFFECT_SET_MIRROR_NAME
     &Spell::SpellEffectSelfResurrect,           //  94 SPELL_EFFECT_SELF_RESURRECT
     &Spell::SpellEffectSkinning,                //  95 SPELL_EFFECT_SKINNING
     &Spell::SpellEffectCharge,                  //  96 SPELL_EFFECT_CHARGE
@@ -352,7 +357,7 @@ const char* SpellEffectNames[TOTAL_SPELL_EFFECTS] =
     "SPELL_EFFECT_NULL_90",                     //    90
     "SPELL_EFFECT_NULL_91",                     //    91
     "SPELL_EFFECT_ENCHANT_HELD_ITEM",           //    92
-    "SPELL_EFFECT_SET_MIRROR_NAME",             //    93
+    "SPELL_EFFECT_FORCE_DESELECT",              //    93
     "SPELL_EFFECT_SELF_RESURRECT",              //    94
     "SPELL_EFFECT_SKINNING",                    //    95
     "SPELL_EFFECT_CHARGE",                      //    96
@@ -1365,7 +1370,7 @@ void Spell::SpellEffectSchoolDMG(uint8_t effectIndex) // dmg school
                 if (p_caster != nullptr)
                 {
                     Item* pItem = p_caster->getItemInterface()->GetInventoryItem(EQUIPMENT_SLOT_RANGED);
-                    ItemProperties const* pItemProto = sMySQLStore.getItemProperties(p_caster->getUInt32Value(PLAYER_AMMO_ID));
+                    ItemProperties const* pItemProto = sMySQLStore.getItemProperties(p_caster->getAmmoId());
                     uint32 stundmg;
                     float bowdmg;
                     float ammodmg;
@@ -2323,6 +2328,9 @@ void Spell::SpellEffectBind(uint8_t effectIndex)
     data << playerTarget->GetBindZoneId();
     playerTarget->GetSession()->SendPacket(&data);
 
+    playerTarget->GetSession()->SendPacket(SmsgBindPointUpdate(playerTarget->GetBindPositionX(), playerTarget->GetBindPositionY(), playerTarget->GetBindPositionZ(),
+        playerTarget->GetBindMapId(), playerTarget->GetBindZoneId()).serialise().get());
+
     data.Initialize(SMSG_PLAYERBOUND);
     data << m_caster->getGuid();
     data << playerTarget->GetBindZoneId();
@@ -2335,9 +2343,9 @@ void Spell::SpellEffectQuestComplete(uint8_t effectIndex) // Quest Complete
     QuestLogEntry* en = p_caster->GetQuestLogForEntry(getSpellInfo()->getEffectMiscValue(effectIndex));
     if (en)
     {
-        en->Complete();
-        en->UpdatePlayerFields();
-        en->SendQuestComplete();
+        en->setStateComplete();
+        en->updatePlayerFields();
+        en->sendQuestComplete();
     }
 }
 
@@ -3368,11 +3376,10 @@ void Spell::SpellEffectEnergize(uint8_t effectIndex) // Energize
     }
 
     if (unitTarget->HasAura(17619))
-    {
         modEnergy = uint32(modEnergy * 1.4f);
-    }
 
-    u_caster->energize(unitTarget, getSpellInfo()->getId(), modEnergy, static_cast<PowerType>(getSpellInfo()->getEffectMiscValue(effectIndex)));
+    if (u_caster)
+        u_caster->energize(unitTarget, getSpellInfo()->getId(), modEnergy, static_cast<PowerType>(getSpellInfo()->getEffectMiscValue(effectIndex)));
 }
 
 void Spell::SpellEffectWeaponDmgPerc(uint8_t effectIndex) // Weapon Percent damage
@@ -4005,19 +4012,7 @@ void Spell::SpellEffectDispel(uint8_t effectIndex) // Dispel
     // send spell dispell log packet
     if (!dispelledSpells.empty())
     {
-        WorldPacket data(SMSG_SPELLDISPELLOG, 25 + dispelledSpells.size() * 5);
-        data << m_caster->GetNewGUID();
-        data << unitTarget->GetNewGUID();
-        data << getSpellInfo()->getId();
-        data << uint8(0);               // unused
-        data << uint32(dispelledSpells.size());
-        for (std::list< uint32 >::iterator itr = dispelledSpells.begin(); itr != dispelledSpells.end(); ++itr)
-        {
-            data << uint32(*itr);       // dispelled spell id
-            data << uint8(0);           // 0 = dispelled, else cleansed
-        }
-
-        m_caster->SendMessageToSet(&data, true);
+        m_caster->SendMessageToSet(SmsgSpellDispellLog(m_caster->getGuid(), unitTarget->getGuid(), getSpellInfo()->getId(), dispelledSpells).serialise().get(), true);
     }
 }
 
@@ -4860,7 +4855,7 @@ void Spell::SpellEffectUseGlyph(uint8_t effectIndex)
         }
     }
 
-    auto glyph_slot = sGlyphSlotStore.LookupEntry(p_caster->getUInt32Value(static_cast<uint16_t>(PLAYER_FIELD_GLYPH_SLOTS_1 + m_glyphslot)));
+    auto glyph_slot = sGlyphSlotStore.LookupEntry(p_caster->getGlyphSlot(m_glyphslot));
     if (glyph_slot)
     {
         if (glyph_slot->Type != glyph_prop_new->Type)
@@ -5591,8 +5586,7 @@ void Spell::SpellEffectSkinPlayerCorpse(uint8_t /*effectIndex*/)
         // Send a message to the died player, telling him he has to resurrect at the graveyard.
         // Send an empty corpse location too, :P
 
-        playerTarget->GetSession()->OutPacket(SMSG_PLAYER_SKINNED, 1, "\x00");
-        playerTarget->GetSession()->OutPacket(MSG_CORPSE_QUERY, 1, "\x00");
+        playerTarget->SendPacket(MsgCorspeQuery(0).serialise().get());
 
         // don't allow him to spawn a corpse
         playerTarget->bCorpseCreateable = false;
@@ -5610,10 +5604,10 @@ void Spell::SpellEffectSkinPlayerCorpse(uint8_t /*effectIndex*/)
         Player* owner = sObjectMgr.GetPlayer(wowGuid.getGuidLowPart());
         if (owner)
         {
-            if (!owner->m_bg) return;
+            if (!owner->m_bg)
+                return;
 
-            owner->GetSession()->OutPacket(SMSG_PLAYER_SKINNED, 1, "\x00");
-            owner->GetSession()->OutPacket(MSG_CORPSE_QUERY, 1, "\x00");
+            owner->SendPacket(MsgCorspeQuery(0).serialise().get());
         }
 
         if (corpse->getDynamicFlags() != 1)
@@ -5996,7 +5990,7 @@ void Spell::SpellEffectPlayerPull(uint8_t /*effectIndex*/)
     data << p_target->GetPositionX();
     data << p_target->GetPositionY();
     data << p_target->GetPositionZ();
-    data <<Util::getMSTime();
+    data << Util::getMSTime();
     data << uint8(4);
     data << pullO;
     data << uint32(0x00001000);
@@ -6094,19 +6088,7 @@ void Spell::SpellEffectSpellSteal(uint8_t /*effectIndex*/)
 
     if (!stealedSpells.empty())
     {
-        WorldPacket data(SMSG_SPELLSTEALLOG, 25 + stealedSpells.size() * 5);
-        data << m_caster->GetNewGUID();
-        data << unitTarget->GetNewGUID();
-        data << getSpellInfo()->getId();
-        data << uint8(0);               // unused
-        data << uint32(stealedSpells.size());
-        for (std::list< uint32 >::iterator itr = stealedSpells.begin(); itr != stealedSpells.end(); ++itr)
-        {
-            data << uint32(*itr);       // stealed spell id
-            data << uint8(1);           // 0 = dispelled, else cleansed
-        }
-
-        m_caster->SendMessageToSet(&data, true);
+        m_caster->SendMessageToSet(SmsgSpellStealLog(m_caster->getGuid(), unitTarget->getGuid(), getSpellInfo()->getId(), stealedSpells).serialise().get(), true);
     }
 }
 
@@ -6268,7 +6250,7 @@ void Spell::SpellEffectTeachTaxiPath(uint8_t effectIndex)
     {
         playerTarget->SetTaximask(field, (submask | playerTarget->GetTaximask(field)));
 
-        playerTarget->GetSession()->OutPacket(SMSG_NEW_TAXI_PATH);
+        playerTarget->SendPacket(SmsgNewTaxiPath().serialise().get());
 
         //Send packet
         playerTarget->GetSession()->SendPacket(SmsgTaxinodeStatus(0, 1).serialise().get());
@@ -6645,9 +6627,12 @@ void Spell::SpellEffectActivateRunes(uint8_t effectIndex)
     }
 }
 
-void Spell::SpellEffectSetMirrorName(uint8_t /*effectIndex*/)
+void Spell::SpellEffectForceDeselect(uint8_t /*effectIndex*/)
 {
-    WorldPacket data(SMSG_CLEAR_TARGET, 8);
-    data << uint64(m_caster->getGuid());
-    m_caster->SendMessageToSet(&data, true);
+    //clear focus SMSG_BREAK_TARGET
+
+    //clear target
+    m_caster->SendMessageToSet(SmsgClearTarget(m_caster->getGuid()).serialise().get(), true);
+
+    //stop attacking and pet target
 }

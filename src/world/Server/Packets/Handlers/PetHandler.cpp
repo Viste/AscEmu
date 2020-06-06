@@ -25,6 +25,7 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Units/Creatures/Vehicle.h"
 #include "Objects/Faction.h"
 #include "Spell/Definitions/SpellFailure.h"
+#include "Server/Packets/SmsgPetLearnedSpell.h"
 
 using namespace AscEmu::Packets;
 
@@ -363,7 +364,7 @@ void WorldSession::handlePetRename(WorldPacket& recvPacket)
     std::list<Pet*> summons = _player->GetSummons();
     for (auto summon : summons)
     {
-        if (summon->getGuid() == srlPacket.guid.GetOldGuid())
+        if (summon->getGuid() == srlPacket.guid.getRawGuid())
         {
             pet = summon;
             break;
@@ -414,7 +415,7 @@ void WorldSession::handlePetUnlearn(WorldPacket& recvPacket)
         return;
 
     const auto pet = _player->GetSummon();
-    if (pet == nullptr || pet->getGuid() != srlPacket.guid.GetOldGuid())
+    if (pet == nullptr || pet->getGuid() != srlPacket.guid.getRawGuid())
         return;
 
     const uint32_t untrainCost = pet->GetUntrainCost();
@@ -517,8 +518,8 @@ void WorldSession::handlePetLearnTalent(WorldPacket& recvPacket)
     {
         pet->AddSpell(spellInfo, true);
         pet->setPetTalentPoints(pet->getPetTalentPoints() - 1);
-        auto id = spellInfo->getId();
-        OutPacket(SMSG_PET_LEARNED_SPELL, 4, &id);
+
+        SendPacket(SmsgPetLearnedSpell(spellInfo->getId()).serialise().get());
     }
 
     pet->SendTalentsToOwner();
@@ -597,13 +598,13 @@ void WorldSession::handleDismissCritter(WorldPacket& recvPacket)
         return;
     }
 
-    if (_player->getCritterGuid() != srlPacket.guid.GetOldGuid())
+    if (_player->getCritterGuid() != srlPacket.guid.getRawGuid())
     {
         LOG_ERROR("Player %u sent dismiss companion packet, but it doesn't match player's companion", _player->getGuidLow());
         return;
     }
 
-    const auto unit = _player->GetMapMgr()->GetUnit(srlPacket.guid.GetOldGuid());
+    const auto unit = _player->GetMapMgr()->GetUnit(srlPacket.guid.getRawGuid());
     if (unit != nullptr)
         unit->Delete();
 

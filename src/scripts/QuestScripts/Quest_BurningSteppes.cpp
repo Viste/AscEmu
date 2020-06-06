@@ -22,12 +22,12 @@ class TabletOfTheSeven : public QuestScript
 {
 public:
 
-    void OnGameObjectActivate(uint32 entry, Player* mTarget, QuestLogEntry* qLogEntry)
+    void OnGameObjectActivate(uint32_t entry, Player* mTarget, QuestLogEntry* qLogEntry)
     {
         if (mTarget == nullptr || qLogEntry == nullptr || entry != 169294)
             return;
 
-        if (mTarget->getItemInterface()->GetItemCount(11470) < qLogEntry->GetQuest()->required_itemcount[0])
+        if (mTarget->getItemInterface()->GetItemCount(11470) < qLogEntry->getQuestProperties()->required_itemcount[0])
             mTarget->castSpell(mTarget, 15065, false);
     }
 };

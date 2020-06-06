@@ -45,18 +45,25 @@ void WorldSession::handleInspectHonorStatsOpcode(WorldPacket& recvPacket)
     if (player == nullptr)
         return;
 
-    const uint8_t honorCurrency = static_cast<uint8_t>(player->GetHonorCurrency());
-    const uint32_t lifetimeKills = player->getUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS);
+    uint8_t honorCurrency = 0;
+
+#if VERSION_STRING > Classic
+#if VERSION_STRING < Cata
+    honorCurrency = static_cast<uint8_t>(player->getHonorCurrency());
+#endif
+#endif
+
+    const uint32_t lifetimeKills = player->getLifetimeHonorableKills();
 
     uint32_t kills = 0;
     uint32_t todayContrib = 0;
     uint32_t yesterdayContrib = 0;
 
 #if VERSION_STRING != Classic
-    kills = player->getUInt32Value(PLAYER_FIELD_KILLS);
+    kills = player->getFieldKills();
 #if VERSION_STRING < Cata
-    todayContrib = player->getUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION);
-    yesterdayContrib = player->getUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION);
+    todayContrib = player->getContributionToday();
+    yesterdayContrib = player->getContributionYesterday();
 #endif
 #endif
 
@@ -211,7 +218,7 @@ void WorldSession::handleAreaSpiritHealerQueryOpcode(WorldPacket& recvPacket)
     else
         restTime = (restTime - static_cast<uint32_t>(UNIXTIME)) * 1000;
 
-    SendPacket(SmsgAreaSpiritHealerTime(srlPacket.guid.GetOldGuid(), restTime).serialise().get());
+    SendPacket(SmsgAreaSpiritHealerTime(srlPacket.guid.getRawGuid(), restTime).serialise().get());
 }
 
 void WorldSession::handleBattlefieldStatusOpcode(WorldPacket& /*recvPacket*/)

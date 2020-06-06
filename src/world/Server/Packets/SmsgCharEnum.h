@@ -4,6 +4,7 @@ This file is released under the MIT license. See README-MIT for more information
 */
 
 #pragma once
+
 #include <cstdint>
 
 #include "ManagedPacket.h"
@@ -84,8 +85,8 @@ namespace AscEmu::Packets
             {
                 for (auto const& data : enum_data)
                 {
-                    ObjectGuid guid = MAKE_NEW_GUID(data.guid, 0, 0x000);
-                    ObjectGuid guildGuid = MAKE_NEW_GUID(data.guildId, 0, HIGHGUID_TYPE_GUILD);
+                    WoWGuid guid(data.guid, 0, HIGHGUID_TYPE_PLAYER);
+                    WoWGuid guildGuid(data.guildId, 0, HIGHGUID_TYPE_GUILD);
 
                     packet.writeBit(guid[3]);
                     packet.writeBit(guildGuid[1]);
@@ -119,7 +120,7 @@ namespace AscEmu::Packets
                     const uint8_t face = uint8_t((data.bytes >> 8) & 0xFF);
                     const uint8_t hairStyle = uint8_t((data.bytes >> 16) & 0xFF);
                     const uint8_t hairColor = uint8_t((data.bytes >> 24) & 0xFF);
-                    const uint8_t facialHair = uint8_t(data.bytes & 0xFF);
+                    const uint8_t facialHair = uint8_t(data.bytes2 & 0xFF);
 
                     buffer << uint32_t(data.pet_data.family);
                     buffer.WriteByteSeq(guildGuid[2]);
@@ -186,8 +187,8 @@ namespace AscEmu::Packets
 
                 for (auto const& data : enum_data)
                 {
-                    ObjectGuid guid = MAKE_NEW_GUID(data.guid, 0, 0x000);
-                    ObjectGuid guildGuid = MAKE_NEW_GUID(data.guildId, 0, HIGHGUID_TYPE_GUILD);
+                    WoWGuid guid(data.guid, 0, HIGHGUID_TYPE_PLAYER);
+                    WoWGuid guildGuid(data.guildId, 0, HIGHGUID_TYPE_GUILD);
 
                     packet.writeBit(guildGuid[4]);
                     packet.writeBit(guid[0]);
@@ -219,7 +220,7 @@ namespace AscEmu::Packets
                     const uint8_t face = uint8_t((data.bytes >> 8) & 0xFF);
                     const uint8_t hairStyle = uint8_t((data.bytes >> 16) & 0xFF);
                     const uint8_t hairColor = uint8_t((data.bytes >> 24) & 0xFF);
-                    const uint8_t facialHair = uint8_t(data.bytes & 0xFF);
+                    const uint8_t facialHair = uint8_t(data.bytes2 & 0xFF);
                     buffer << uint8(hairStyle);
 
                     buffer.WriteByteSeq(guildGuid[2]);

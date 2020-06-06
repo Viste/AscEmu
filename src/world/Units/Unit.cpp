@@ -19,6 +19,7 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Server/Packets/SmsgPowerUpdate.h"
 #include "Map/MapMgr.h"
 #include "Units/Creatures/Vehicle.h"
+#include "Server/Packets/SmsgSpellEnergizeLog.h"
 
 using namespace AscEmu::Packets;
 
@@ -67,6 +68,46 @@ void Unit::setChannelSpellId(uint32_t spell_id) { write(unitData()->channel_spel
 //bytes_0 begin
 uint32_t Unit::getBytes0() const { return unitData()->field_bytes_0.raw; }
 void Unit::setBytes0(uint32_t bytes) { write(unitData()->field_bytes_0.raw, bytes); }
+
+uint8_t Unit::getBytes0ByOffset(uint32_t offset) const
+{
+    switch (offset)
+    {
+        case 0:
+            return getRace();
+        case 1:
+            return getClass();
+        case 2:
+            return getGender();
+        case 3:
+            return getPowerType();
+        default:
+            LogError("Offset %u is not a valid offset value for byte_0 data (max 3). Returning 0", offset);
+            return 0;
+    }
+}
+
+void Unit::setBytes0ForOffset(uint32_t offset, uint8_t value)
+{
+    switch (offset)
+    {
+        case 0:
+            setRace(value);
+            break;
+        case 1:
+            setClass(value);
+            break;
+        case 2:
+            setGender(value);
+            break;
+        case 3:
+            setPowerType(value);
+            break;
+        default:
+            LogError("Offset %u is not a valid offset value for byte_0 data (max 3)", offset);
+            break;
+    }
+}
 
 uint8_t Unit::getRace() const { return unitData()->field_bytes_0.s.race; }
 void Unit::setRace(uint8_t race) { write(unitData()->field_bytes_0.s.race, race); }
@@ -572,6 +613,46 @@ void Unit::setMaxOffhandDamage(float damage) { write(unitData()->maximum_offhand
 uint32_t Unit::getBytes1() const { return unitData()->field_bytes_1.raw; }
 void Unit::setBytes1(uint32_t bytes) { write(unitData()->field_bytes_1.raw, bytes); }
 
+uint8_t Unit::getBytes1ByOffset(uint32_t offset) const
+{
+    switch (offset)
+    {
+        case 0:
+            return getStandState();
+        case 1:
+            return getPetTalentPoints();
+        case 2:
+            return getStandStateFlags();
+        case 3:
+            return getAnimationFlags();
+        default:
+            LogError("Offset %u is not a valid offset value for byte_1 data (max 3). Returning 0", offset);
+            return 0;
+    }
+}
+
+void Unit::setBytes1ForOffset(uint32_t offset, uint8_t value)
+{
+    switch (offset)
+    {
+        case 0:
+            setStandState(value);
+            break;
+        case 1:
+            setPetTalentPoints(value);
+            break;
+        case 2:
+            setStandStateFlags(value);
+            break;
+        case 3:
+            setAnimationFlags(value);
+            break;
+        default:
+            LogError("Offset %u is not a valid offset value for byte_1 data (max 3)", offset);
+            break;
+    }
+}
+
 uint8_t Unit::getStandState() const { return unitData()->field_bytes_1.s.stand_state; }
 void Unit::setStandState(uint8_t standState) { write(unitData()->field_bytes_1.s.stand_state, standState); }
 
@@ -586,7 +667,7 @@ void Unit::setAnimationFlags(uint8_t animationFlags) { write(unitData()->field_b
 //bytes_1 end
 
 uint32_t Unit::getPetNumber() const { return unitData()->pet_number; }
-void Unit::setPetNumber(uint32_t timestamp) { write(unitData()->pet_number, timestamp); }
+void Unit::setPetNumber(uint32_t number) { write(unitData()->pet_number, number); }
 
 uint32_t Unit::getPetNameTimestamp() const { return unitData()->pet_name_timestamp; }
 void Unit::setPetNameTimestamp(uint32_t timestamp) { write(unitData()->pet_name_timestamp, timestamp); }
@@ -636,6 +717,14 @@ void Unit::setNegStat(uint8_t stat, uint32_t value) { write(unitData()->negative
 uint32_t Unit::getResistance(uint8_t type) const { return unitData()->resistance[type]; }
 void Unit::setResistance(uint8_t type, uint32_t value) { write(unitData()->resistance[type], value); }
 
+#if VERSION_STRING > Classic
+uint32_t Unit::getResistanceBuffModPositive(uint8_t type) const { return unitData()->resistance_buff_mod_positive[type]; }
+void Unit::setResistanceBuffModPositive(uint8_t type, uint32_t value) { write(unitData()->resistance_buff_mod_positive[type], value); }
+
+uint32_t Unit::getResistanceBuffModNegative(uint8_t type) const { return unitData()->resistance_buff_mod_negative[type]; }
+void Unit::setResistanceBuffModNegative(uint8_t type, uint32_t value) { write(unitData()->resistance_buff_mod_negative[type], value); }
+#endif
+
 uint32_t Unit::getBaseMana() const { return unitData()->base_mana; }
 void Unit::setBaseMana(uint32_t baseMana) { write(unitData()->base_mana, baseMana); }
 
@@ -645,6 +734,46 @@ void Unit::setBaseHealth(uint32_t baseHealth) { write(unitData()->base_health, b
 //byte_2 begin
 uint32_t Unit::getBytes2() const { return unitData()->field_bytes_2.raw; }
 void Unit::setBytes2(uint32_t bytes) { write(unitData()->field_bytes_2.raw, bytes); }
+
+uint8_t Unit::getBytes2ByOffset(uint32_t offset) const
+{
+    switch (offset)
+    {
+        case 0:
+            return getSheathType();
+        case 1:
+            return getPvpFlags();
+        case 2:
+            return getPetFlags();
+        case 3:
+            return getShapeShiftForm();
+        default:
+            LogError("Offset %u is not a valid offset value for byte_2 data (max 3). Returning 0", offset);
+            return 0;
+    }
+}
+
+void Unit::setBytes2ForOffset(uint32_t offset, uint8_t value)
+{
+    switch (offset)
+    {
+        case 0:
+            setSheathType(value);
+            break;
+        case 1:
+            setPvpFlags(value);
+            break;
+        case 2:
+            setPetFlags(value);
+            break;
+        case 3:
+            setShapeShiftForm(value);
+            break;
+        default:
+            LogError("Offset %u is not a valid offset value for byte_2 data (max 3)", offset);
+            break;
+    }
+}
 
 uint8_t Unit::getSheathType() const { return unitData()->field_bytes_2.s.sheath_type; }
 void Unit::setSheathType(uint8_t sheathType) { write(unitData()->field_bytes_2.s.sheath_type, sheathType); }
@@ -801,8 +930,7 @@ uint32_t Unit::addAuraVisual(uint32_t spell_id, uint32_t count, bool positive)
     return addAuraVisual(spell_id, count, positive, out);
 }
 
-uint32_t Unit::addAuraVisual(uint32_t spell_id, uint32_t count, bool positive,
-    bool& skip_client_update)
+uint32_t Unit::addAuraVisual(uint32_t spell_id, uint32_t count, bool positive, bool& skip_client_update)
 {
     auto free = -1;
     uint32_t start = positive ? MAX_POSITIVE_VISUAL_AURAS_START : MAX_POSITIVE_VISUAL_AURAS_END;
@@ -810,10 +938,10 @@ uint32_t Unit::addAuraVisual(uint32_t spell_id, uint32_t count, bool positive,
 
     for (auto x = start; x < end; ++x)
     {
-        if (free == -1 && m_uint32Values[UNIT_FIELD_AURA + x] == 0)
+        if (free == -1 && m_uint32Values[getOffsetForStructuredField(WoWUnit, aura) + x] == 0)
             free = x;
 
-        if (m_uint32Values[UNIT_FIELD_AURA + x] == spell_id)
+        if (m_uint32Values[getOffsetForStructuredField(WoWUnit, aura)+ x] == spell_id)
         {
             const auto aura = m_auras[x];
             ModVisualAuraStackCount(aura, count);
@@ -828,7 +956,7 @@ uint32_t Unit::addAuraVisual(uint32_t spell_id, uint32_t count, bool positive,
         return 0xff;
 
     const auto flag_slot = static_cast<uint8_t>((free / 4));
-    const uint16_t val_slot = UNIT_FIELD_AURAFLAGS + flag_slot;
+    const uint16_t val_slot = getOffsetForStructuredField(WoWUnit, aura_flags) + flag_slot;
     auto value = m_uint32Values[val_slot];
     const auto aura_pos = free % 4 * 8;
     value &= ~(0xff << aura_pos);
@@ -838,7 +966,7 @@ uint32_t Unit::addAuraVisual(uint32_t spell_id, uint32_t count, bool positive,
         value |= 0x9 << aura_pos;
 
     m_uint32Values[val_slot] = value;
-    m_uint32Values[UNIT_FIELD_AURA + free] = spell_id;
+    m_uint32Values[getOffsetForStructuredField(WoWUnit, aura) + free] = spell_id;
     const auto aura = m_auras[free];
     ModVisualAuraStackCount(aura, 1);
     setAuraSlotLevel(free, positive);
@@ -849,7 +977,7 @@ uint32_t Unit::addAuraVisual(uint32_t spell_id, uint32_t count, bool positive,
 void Unit::setAuraSlotLevel(uint32_t slot, bool positive)
 {
     const auto index = slot / 4;
-    auto value = m_uint32Values[UNIT_FIELD_AURALEVELS + index];
+    auto value = m_uint32Values[getOffsetForStructuredField(WoWUnit, aura_levels) + index];
     const auto bit = slot % 4 * 8;
     value &= ~(0xff << bit);
     if (positive)
@@ -857,7 +985,7 @@ void Unit::setAuraSlotLevel(uint32_t slot, bool positive)
     else
         value |= 0x19 << bit;
 
-    m_uint32Values[UNIT_FIELD_AURALEVELS + index] = value;
+    m_uint32Values[getOffsetForStructuredField(WoWUnit, aura_levels) + index] = value;
 }
 #endif
 
@@ -2122,7 +2250,7 @@ bool Unit::canSee(Object* const obj)
                         return true;
 
                     // Game Masters can see all dead players
-                    return HasFlag(PLAYER_FLAGS, PLAYER_FLAG_GM);
+                    return dynamic_cast<Player*>(this)->hasPlayerFlags(PLAYER_FLAG_GM);
                 }
                 else
                 {
@@ -2136,7 +2264,7 @@ bool Unit::canSee(Object* const obj)
             // Unit cannot see Spirit Healers when unit's alive
             // unless unit is a Game Master
             if (obj->isCreature() && static_cast<Creature*>(obj)->isSpiritHealer())
-                return isPlayer() && HasFlag(PLAYER_FLAGS, PLAYER_FLAG_GM);
+                return isPlayer() && dynamic_cast<Player*>(this)->hasPlayerFlags(PLAYER_FLAG_GM);
 
             const auto unitObj = static_cast<Unit*>(obj);
 
@@ -2199,7 +2327,7 @@ bool Unit::canSee(Object* const obj)
     }
 
     // Game Masters can see invisible and stealthed objects
-    if (isPlayer() && HasFlag(PLAYER_FLAGS, PLAYER_FLAG_GM))
+    if (isPlayer() && dynamic_cast<Player*>(this)->hasPlayerFlags(PLAYER_FLAG_GM))
         return true;
 
     // Hunter Marked units are always visible to caster
@@ -2679,16 +2807,7 @@ void Unit::energize(Unit* target, uint32_t spellId, uint32_t amount, PowerType t
 
 void Unit::sendSpellEnergizeLog(Unit* target, uint32_t spellId, uint32_t amount, PowerType type)
 {
-    WorldPacket data(SMSG_SPELLENERGIZELOG, 30);
-
-    data << target->GetNewGUID();
-    data << GetNewGUID();
-    data << uint32_t(spellId);
-    // For some reason power type needs to be sent as uint32_t
-    data << uint32_t(type);
-    data << uint32_t(amount);
-
-    SendMessageToSet(&data, true);
+    SendMessageToSet(SmsgSpellEnergizeLog(target->GetNewGUID(), GetNewGUID(), spellId, type, amount).serialise().get(), true);
 }
 
 uint8_t Unit::getPowerPct(PowerType powerType) const
@@ -2714,7 +2833,7 @@ void Unit::sendPowerUpdate(bool self)
     SendMessageToSet(SmsgPowerUpdate(GetNewGUID(), static_cast<uint8_t>(getPowerType()), powerAmount).serialise().get(), self);
 #else
     //\ todo: is this correct for TBC?
-    auto packet = BuildFieldUpdatePacket(UNIT_FIELD_POWER1 + (getPowerIndexFromDBC(getPowerType()) - 1), powerAmount);
+    auto packet = BuildFieldUpdatePacket(getOffsetForStructuredField(WoWUnit, power_1) + (getPowerIndexFromDBC(getPowerType()) - 1), powerAmount);
     SendMessageToSet(packet, false);
     delete packet;
 #endif

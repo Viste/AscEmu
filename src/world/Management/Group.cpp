@@ -27,6 +27,9 @@
 #include "Objects/ObjectMgr.h"
 #include "Units/Creatures/Pet.h"
 #include "Server/Packets/SmsgPartyCommandResult.h"
+#include "Server/Packets/SmsgGroupSetLeader.h"
+#include "Server/Packets/SmsgGroupDestroyed.h"
+#include "Server/Packets/SmsgGroupList.h"
 
 using namespace AscEmu::Packets;
 
@@ -51,7 +54,12 @@ Group::Group(bool Assign)
     {
         m_Id = sObjectMgr.GenerateGroupId();
         sObjectMgr.AddGroup(this);
-        m_guid = MAKE_NEW_GUID(m_Id, 0, HIGHGUID_TYPE_GROUP);
+        m_guid = WoWGuid(m_Id, 0, HIGHGUID_TYPE_GROUP).getRawGuid();
+    }
+    else
+    {
+        m_Id = 0;
+        m_guid = 0;
     }
 
     m_dirty = false;
@@ -63,8 +71,6 @@ Group::Group(bool Assign)
     m_raiddifficulty = 0;
     m_assistantLeader = m_mainAssist = m_mainTank = NULL;
     updatecounter = 0;
-    m_Id = 0;
-    m_guid = 0;
 }
 
 Group::~Group()
@@ -192,12 +198,9 @@ void Group::SetLeader(Player* pPlayer, bool silent)
         m_dirty = true;
 
         if (silent == false)
-        {
-            WorldPacket data(SMSG_GROUP_SET_LEADER, pPlayer->getName().size() + 1);
-            data << pPlayer->getName().c_str();
-            SendPacketToAll(&data);
-        }
+            SendPacketToAll(SmsgGroupSetLeader(pPlayer->getName()).serialise().get());
     }
+
     Update();
 }
 
@@ -388,12 +391,6 @@ void Group::Disband()
 
 void SubGroup::Disband()
 {
-    WorldPacket data(SMSG_GROUP_DESTROYED, 1);
-    WorldPacket data2(SMSG_PARTY_COMMAND_RESULT, 12);
-    data2 << uint32(2);
-    data2 << uint8(0);
-    data2 << uint32(m_Parent->m_difficulty);    // you leave the group
-
     for (GroupMembersSet::iterator itr = m_GroupMembers.begin(); itr != m_GroupMembers.end();)
     {
         if ((*itr) != nullptr)
@@ -402,9 +399,8 @@ void SubGroup::Disband()
             {
                 if ((*itr)->m_loggedInPlayer->GetSession() != nullptr)
                 {
-                    data2.put(5, uint32((*itr)->m_loggedInPlayer->iInstanceType));
-                    (*itr)->m_loggedInPlayer->GetSession()->SendPacket(&data2);
-                    (*itr)->m_loggedInPlayer->GetSession()->SendPacket(&data);
+                    (*itr)->m_loggedInPlayer->GetSession()->SendPacket(SmsgPartyCommandResult(2, "", (*itr)->m_loggedInPlayer->iInstanceType).serialise().get());
+                    (*itr)->m_loggedInPlayer->GetSession()->SendPacket(SmsgGroupDestroyed().serialise().get());
 #if VERSION_STRING >= Cata
                     (*itr)->m_loggedInPlayer->GetSession()->sendEmptyGroupList((*itr)->m_loggedInPlayer);
 #else
@@ -457,7 +453,6 @@ void Group::RemovePlayer(PlayerInfo* info)
     if (info == nullptr)
         return;
 
-    WorldPacket data(50);
     Player* pPlayer = info->m_loggedInPlayer;
 
     m_groupLock.Acquire();
@@ -513,18 +508,11 @@ void Group::RemovePlayer(PlayerInfo* info)
             SendNullUpdate(pPlayer);
 #endif
 
-            data.SetOpcode(SMSG_GROUP_DESTROYED);
-            pPlayer->GetSession()->SendPacket(&data);
+            pPlayer->GetSession()->SendPacket(SmsgGroupDestroyed().serialise().get());
 
-#if VERSION_STRING >= Cata
             pPlayer->GetSession()->SendPacket(SmsgPartyCommandResult(2, pPlayer->getName().c_str(), ERR_PARTY_NO_ERROR).serialise().get());
+#if VERSION_STRING >= Cata
             pPlayer->GetSession()->sendEmptyGroupList(pPlayer);
-#else
-            data.Initialize(SMSG_PARTY_COMMAND_RESULT);
-            data << uint32(2);
-            data << uint8(0);
-            data << uint32(0);  // you leave the group
-            pPlayer->GetSession()->SendPacket(&data);
 #endif
         }
 
@@ -745,10 +733,7 @@ void Group::MovePlayer(PlayerInfo* info, uint8 subgroup)
 
 void Group::SendNullUpdate(Player* pPlayer)
 {
-    // this packet is 28 bytes long.    // AS OF 3.3
-    uint8 buffer[28];
-    memset(buffer, 0, 28);
-    pPlayer->GetSession()->OutPacket(SMSG_GROUP_LIST, 28, buffer);
+    pPlayer->SendPacket(SmsgGroupList().serialise().get());
 }
 
 void Group::LoadFromDB(Field* fields)
@@ -1142,9 +1127,9 @@ void Group::UpdateAllOutOfRangePlayersFor(Player* pPlayer)
     Player* plr;
     bool u1, u2;
     UpdateMask myMask;
-    myMask.SetCount(PLAYER_END);
+    myMask.SetCount(getSizeOfStructure(WoWPlayer));
     UpdateMask hisMask;
-    hisMask.SetCount(PLAYER_END);
+    hisMask.SetCount(getSizeOfStructure(WoWPlayer));
 
     m_groupLock.Acquire();
     for (uint8 i = 0; i < m_SubGroupCount; ++i)
@@ -1155,7 +1140,8 @@ void Group::UpdateAllOutOfRangePlayersFor(Player* pPlayer)
         for (GroupMembersSet::iterator itr = m_SubGroups[i]->GetGroupMembersBegin(); itr != m_SubGroups[i]->GetGroupMembersEnd(); ++itr)
         {
             plr = (*itr)->m_loggedInPlayer;
-            if (!plr || plr == pPlayer) continue;
+            if (!plr || plr == pPlayer)
+                continue;
 
             if (!plr->IsVisible(pPlayer->getGuid()))
             {
@@ -1170,24 +1156,32 @@ void Group::UpdateAllOutOfRangePlayersFor(Player* pPlayer)
                     hisMask.Clear();
                     myMask.Clear();
                     u1 = u2 = false;
-#if VERSION_STRING == TBC
-                    for (uint16 j = PLAYER_QUEST_LOG_1_1; j <= PLAYER_QUEST_LOG_25_1; ++j)
-#elif VERSION_STRING == Classic
-                    for (uint16 j = PLAYER_QUEST_LOG_1_1; j <= PLAYER_QUEST_LOG_15_4; ++j)
+
+#if VERSION_STRING == Classic
+                    uint16_t questIdOffset = 3;
+#elif VERSION_STRING == TBC
+                    uint16_t questIdOffset = 4;
 #else
-                    for (uint16 j = PLAYER_QUEST_LOG_1_1; j <= PLAYER_QUEST_LOG_25_5; ++j)
+                    uint16_t questIdOffset = 5;
 #endif
+
+                    for (uint8_t x = 0; x < WOWPLAYER_QUEST_COUNT; ++x)
                     {
-                        if (plr->getUInt32Value(j))
+                        const uint32_t startBit = getOffsetForStructuredField(WoWPlayer, quests);
+                        if (plr->getQuestLogEntryForSlot(x))
                         {
-                            hisMask.SetBit(j);
+                            for (uint16 j = startBit * x; j < startBit * x + questIdOffset; ++j)
+                                hisMask.SetBit(j);
+
                             u1 = true;
                         }
 
-                        if (pPlayer->getUInt32Value(j))
+                        if (pPlayer->getQuestLogEntryForSlot(x))
                         {
                             u2 = true;
-                            myMask.SetBit(j);
+
+                            for (uint16 j = startBit * x; j < startBit * x + questIdOffset; ++j)
+                                myMask.SetBit(j);
                         }
                     }
 
@@ -1304,7 +1298,7 @@ void Group::SendLootUpdates(Object* o)
         Flags |= U_DYN_FLAG_LOOTABLE;
         Flags |= U_DYN_FLAG_TAPPED_BY_PLAYER;
 
-        o->BuildFieldUpdatePacket(&buf, UNIT_DYNAMIC_FLAGS, Flags);
+        o->BuildFieldUpdatePacket(&buf, getOffsetForStructuredField(WoWUnit, dynamic_flags), Flags);
 
         Lock();
 

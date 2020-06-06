@@ -34,13 +34,13 @@ public:
 
 class KayaFlathoof : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(KayaFlathoof);
+    ADD_CREATURE_FACTORY_FUNCTION(KayaFlathoof)
     explicit KayaFlathoof(Creature* pCreature) : CreatureAIScript(pCreature)
     {
         pCreature->GetAIInterface()->setWaypointScriptType(Movement::WP_MOVEMENT_SCRIPT_NONE);
     }
 
-    void OnReachWP(uint32 iWaypointId, bool /*bForwards*/) override
+    void OnReachWP(uint32_t iWaypointId, bool /*bForwards*/) override
     {
         switch (iWaypointId)
         {
@@ -55,7 +55,7 @@ class KayaFlathoof : public CreatureAIScript
                 auto quest_entry = plr->GetQuestLogForEntry(6523);
                 if (quest_entry == nullptr)
                     return;
-                quest_entry->SendQuestComplete();
+                quest_entry->sendQuestComplete();
             }break;
             case 17:
             {
@@ -66,14 +66,13 @@ class KayaFlathoof : public CreatureAIScript
 
     void OnDied(Unit* /*mKiller*/) override
     {
-        if (getCreature()->m_escorter == NULL)
-            return;
-        Player* plr = getCreature()->m_escorter;
-        getCreature()->m_escorter = NULL;
+        if (Player* player = getCreature()->m_escorter)
+        {
+            getCreature()->m_escorter = nullptr;
 
-        auto quest_entry = plr->GetQuestLogForEntry(6523);
-        if (quest_entry != nullptr)
-            quest_entry->Fail(false);
+            if (auto questLogEntry = player->GetQuestLogForEntry(6523))
+                questLogEntry->sendQuestFailed();
+        }
     }
 };
 

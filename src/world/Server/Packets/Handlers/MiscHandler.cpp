@@ -54,6 +54,8 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Server/Packets/CmsgAlterAppearance.h"
 #include "Server/Packets/CmsgGameobjUse.h"
 #include "Server/Packets/CmsgInspect.h"
+#include "Server/Packets/SmsgAccountDataTimes.h"
+#include "Server/Packets/SmsgLogoutCancelAck.h"
 
 using namespace AscEmu::Packets;
 
@@ -722,7 +724,7 @@ void WorldSession::handleResurrectResponse(WorldPacket& recvPacket)
     if (player == nullptr)
         return;
 
-    if (srlPacket.status != 1 || _player->m_resurrecter || _player->m_resurrecter != srlPacket.guid.GetOldGuid())
+    if (srlPacket.status != 1 || _player->m_resurrecter || _player->m_resurrecter != srlPacket.guid.getRawGuid())
     {
         _player->m_resurrectHealth = 0;
         _player->m_resurrectMana = 0;
@@ -1056,7 +1058,7 @@ void WorldSession::handleLogoutCancelOpcode(WorldPacket& /*recvPacket*/)
 
     SetLogoutTimer(0);
 
-    OutPacket(SMSG_LOGOUT_CANCEL_ACK);
+    SendPacket(SmsgLogoutCancelAck().serialise().get());
 
     _player->setMoveRoot(false);
 
@@ -1089,7 +1091,7 @@ void WorldSession::handleCorpseReclaimOpcode(WorldPacket& recvPacket)
 
     LogDebugFlag(LF_OPCODE, "Received CMSG_RECLAIM_CORPSE");
 
-    if (srlPacket.guid.GetOldGuid() == 0)
+    if (srlPacket.guid.getRawGuid() == 0)
         return;
 
     auto corpse = sObjectMgr.GetCorpse(srlPacket.guid.getGuidLow());
@@ -2176,52 +2178,7 @@ void WorldSession::sendClientCacheVersion(uint32 version)
 
 void WorldSession::sendAccountDataTimes(uint32 mask)
 {
-#if VERSION_STRING == TBC
-    StackWorldPacket<128> data(SMSG_ACCOUNT_DATA_TIMES);
-    for (auto i = 0; i < 32; ++i)
-        data << uint32_t(0);
-    SendPacket(&data);
-    return;
-
-    MD5Hash md5hash;
-    for (int i = 0; i < 8; ++i)
-    {
-        AccountDataEntry* acct_data = GetAccountData(i);
-
-        if (!acct_data->data)
-        {
-            data << uint64(0) << uint64(0);
-            continue;
-        }
-        md5hash.Initialize();
-        md5hash.UpdateData((const uint8_t*)acct_data->data, acct_data->sz);
-        md5hash.Finalize();
-
-        data.Write(md5hash.GetDigest(), MD5_DIGEST_LENGTH);
-    }
-#elif VERSION_STRING <= Cata
-    WorldPacket data(SMSG_ACCOUNT_DATA_TIMES, 4 + 1 + 4 + 8 * 4);
-    data << uint32_t(UNIXTIME);
-    data << uint8_t(1);
-    data << uint32_t(mask);
-    for (uint8 i = 0; i < NUM_ACCOUNT_DATA_TYPES; ++i)
-    {
-        if (mask & (1 << i))
-            data << uint32(0);
-    }
-#else
-    WorldPacket data(SMSG_ACCOUNT_DATA_TIMES, 4 + 1 + 4 + 8 * 4);
-    data.writeBit(1);
-    data.flushBits();
-    for (uint8_t i = 0; i < NUM_ACCOUNT_DATA_TYPES; ++i)
-    {
-        if (mask & (1 << i))
-            data << uint32_t(0);
-    }
-    data << uint32_t(mask);
-    data << uint32_t(UNIXTIME);
-#endif
-    SendPacket(&data);
+    SendPacket(SmsgAccountDataTimes(UNIXTIME, 1, mask, NUM_ACCOUNT_DATA_TYPES).serialise().get());
 }
 
 void WorldSession::sendMOTD()

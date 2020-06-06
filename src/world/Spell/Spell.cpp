@@ -44,6 +44,10 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Units/Players/PlayerClasses.hpp"
 #include "Units/UnitDefines.hpp"
 #include "Util.hpp"
+#include "Server/Packets/MsgChannelUpdate.h"
+#include "Server/Packets/MsgChannelStart.h"
+
+using namespace AscEmu::Packets;
 
 using AscEmu::World::Spell::Helpers::spellModFlatFloatValue;
 using AscEmu::World::Spell::Helpers::spellModPercentageFloatValue;
@@ -1055,7 +1059,7 @@ SpellCastResult Spell::canCast(const bool secondCheck, uint32_t* parameter1, uin
                     return SPELL_FAILED_CANT_CAST_ON_TAPPED;
 
                 // GM flagged players should be immune to other players' casts, but not their own
-                if (target->isPlayer() && (dynamic_cast<Player*>(target)->HasFlag(PLAYER_FLAGS, PLAYER_FLAG_GM) || dynamic_cast<Player*>(target)->m_isGmInvisible))
+                if (target->isPlayer() && (dynamic_cast<Player*>(target)->hasPlayerFlags(PLAYER_FLAG_GM) || dynamic_cast<Player*>(target)->m_isGmInvisible))
                 {
 #if VERSION_STRING == Classic
                     return SPELL_FAILED_BAD_TARGETS;
@@ -2906,13 +2910,15 @@ SpellCastResult Spell::checkItems(uint32_t* parameter1, uint32_t* parameter2) co
                             }
                             break;
                         case 8: // Enchants a new prismatic socket slot to item
+#if VERSION_STRING > TBC
                             // Check if the item already has a prismatic gem slot enchanted
                             if (targetItem->getEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT) != 0)
                             {
                                 return SPELL_FAILED_ITEM_ALREADY_ENCHANTED;
                             }
+#endif
                             // or if the item already has the maximum amount of socket slots
-                            else if (targetItem->GetSocketsCount() >= MAX_ITEM_PROTO_SOCKETS)
+                            if (targetItem->GetSocketsCount() >= MAX_ITEM_PROTO_SOCKETS)
                             {
 #if VERSION_STRING < WotLK
                                 return SPELL_FAILED_BAD_TARGETS;
@@ -3620,13 +3626,6 @@ void Spell::sendCastResult(SpellCastResult result, uint32_t parameter1 /*= 0*/, 
 
 void Spell::sendChannelUpdate(const uint32_t time)
 {
-    // Initialize packet size
-#if VERSION_STRING == Classic
-    const uint8_t packetSize = 4;
-#else
-    const uint8_t packetSize = 12;
-#endif
-
     if (time == 0)
     {
         if (u_caster != nullptr)
@@ -3653,12 +3652,7 @@ void Spell::sendChannelUpdate(const uint32_t time)
         }
     }
 
-    WorldPacket data(MSG_CHANNEL_UPDATE, packetSize);
-#if VERSION_STRING >= TBC
-    data << m_caster->GetNewGUID();
-#endif
-    data << uint32_t(time);
-    m_caster->SendMessageToSet(&data, true);
+    m_caster->SendMessageToSet(MsgChannelUpdate(m_caster->GetNewGUID(), time).serialise().get(), true);
 }
 
 void Spell::sendSpellStart()
@@ -3858,27 +3852,7 @@ void Spell::sendSpellGo()
 
 void Spell::sendChannelStart(const uint32_t duration)
 {
-    // Initialize packet size
-#if VERSION_STRING == Classic
-    const uint8_t packetSize = 8;
-#elif VERSION_STRING < Cata
-    const uint8_t packetSize = 16;
-#else
-    const uint8_t packetSize = 18;
-#endif
-
-    WorldPacket data(MSG_CHANNEL_START, packetSize);
-#if VERSION_STRING >= TBC
-    data << m_caster->GetNewGUID();
-#endif
-    data << uint32_t(getSpellInfo()->getId());
-    data << uint32_t(duration);
-#if VERSION_STRING >= Cata
-    //\ todo: figure these out
-    data << uint8_t(0);
-    data << uint8_t(0);
-#endif
-    m_caster->SendMessageToSet(&data, true);
+    m_caster->SendMessageToSet(MsgChannelStart(m_caster->GetNewGUID(), getSpellInfo()->getId(), duration).serialise().get(), true);
 
     Object const* channelTarget = nullptr;
     if (!uniqueHittedTargets.empty())
@@ -3893,15 +3867,14 @@ void Spell::sendChannelStart(const uint32_t duration)
                 channelTarget = targetUnit;
                 break;
             }
-            else
+
+            const auto objTarget = m_caster->GetMapMgrGameObject(targetGuid);
+            if (objTarget != nullptr)
             {
-                const auto objTarget = m_caster->GetMapMgrGameObject(targetGuid);
-                if (objTarget != nullptr)
-                {
-                    channelTarget = objTarget;
-                    break;
-                }
+                channelTarget = objTarget;
+                break;
             }
+
         }
     }
 

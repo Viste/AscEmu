@@ -12,7 +12,7 @@ extern "C" SCRIPT_DECL void _exp_set_serverstate_singleton(ServerState* state)
     ServerState::instance(state);
 }
 
-extern "C" SCRIPT_DECL uint32 _exp_get_script_type()
+extern "C" SCRIPT_DECL uint32_t _exp_get_script_type()
 {
     return SCRIPT_TYPE_MISC;
 }
@@ -23,7 +23,6 @@ extern "C" SCRIPT_DECL void _exp_script_register(ScriptMgr* mgr)
     SetupInnkeepers(mgr);
     SetupTrainerScript(mgr);
     SetupMoongladeGossip(mgr);
-    SetupXpEliminatorGossip(mgr);
 }
 
 #ifdef WIN32

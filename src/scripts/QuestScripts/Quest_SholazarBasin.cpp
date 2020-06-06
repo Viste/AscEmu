@@ -35,7 +35,7 @@ enum
 
 class ChickenEscapee : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(ChickenEscapee);
+    ADD_CREATURE_FACTORY_FUNCTION(ChickenEscapee)
     explicit ChickenEscapee(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
     void OnLoad()
@@ -84,7 +84,7 @@ public:
         }
     }
 
-    void onSelectOption(Object* pObject, Player* plr, uint32 /*Id*/, const char* /*Code*/, uint32 /*gossipId*/) override
+    void onSelectOption(Object* pObject, Player* plr, uint32_t /*Id*/, const char* /*Code*/, uint32_t /*gossipId*/) override
     {
         Creature* pCreature = static_cast<Creature*>(pObject);
 
@@ -99,12 +99,12 @@ public:
         if (qle == nullptr)
             return;
 
-        if (qle->GetMobCount(0) != 0)
+        if (qle->getMobCountByIndex(0) != 0)
             return;
 
-        qle->SetMobCount(0, 1);
+        qle->setMobCountForIndex(0, 1);
         qle->SendUpdateAddKill(0);
-        qle->UpdatePlayerFields();
+        qle->updatePlayerFields();
     }
 };
 
@@ -122,7 +122,7 @@ public:
         }
     }
 
-    void onSelectOption(Object* pObject, Player* plr, uint32 /*Id*/, const char* /*Code*/, uint32 /*gossipId*/) override
+    void onSelectOption(Object* pObject, Player* plr, uint32_t /*Id*/, const char* /*Code*/, uint32_t /*gossipId*/) override
     {
         Creature* pCreature = static_cast<Creature*>(pObject);
 
@@ -136,12 +136,12 @@ public:
         if (qle == nullptr)
             return;
 
-        if (qle->GetMobCount(0) != 0)
+        if (qle->getMobCountByIndex(0) != 0)
             return;
 
-        qle->SetMobCount(1, 1);
+        qle->setMobCountForIndex(1, 1);
         qle->SendUpdateAddKill(1);
-        qle->UpdatePlayerFields();
+        qle->updatePlayerFields();
     }
 };
 
@@ -159,7 +159,7 @@ public:
         }
     }
 
-    void onSelectOption(Object* pObject, Player* plr, uint32 /*Id*/, const char* /*Code*/, uint32 /*gossipId*/) override
+    void onSelectOption(Object* pObject, Player* plr, uint32_t /*Id*/, const char* /*Code*/, uint32_t /*gossipId*/) override
     {
         Creature* pCreature = static_cast<Creature*>(pObject);
 
@@ -174,12 +174,12 @@ public:
         if (qle == nullptr)
             return;
 
-        if (qle->GetMobCount(0) != 0)
+        if (qle->getMobCountByIndex(0) != 0)
             return;
 
-        qle->SetMobCount(2, 1);
+        qle->setMobCountForIndex(2, 1);
         qle->SendUpdateAddKill(2);
-        qle->UpdatePlayerFields();
+        qle->updatePlayerFields();
     }
 };
 

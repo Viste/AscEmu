@@ -6,15 +6,11 @@ This file is released under the MIT license. See README-MIT for more information
 #pragma once
 
 #include "../world/WorldConf.h"
+#include <stddef.h>
 
-#if VERSION_STRING == Classic
-    #include "../world/GameClassic/UpdateFields.h"
-#elif VERSION_STRING == TBC
-    #include "../world/GameTBC/UpdateFields.h"
-#elif VERSION_STRING == WotLK
-    #include "../world/GameWotLK/UpdateFields.h"
-#elif VERSION_STRING == Cata
-    #include "../world/GameCata/UpdateFields.h"
-#elif VERSION_STRING == Mop
-#include "../world/GameMop/UpdateFields.h"
-#endif
+#define getOffsetForStructuredField(s,m) static_cast<uint32_t>(offsetof(s,m) / 4)
+
+#define getSizeOfStructure(s) static_cast<uint32_t>(sizeof(s) / 4)
+
+#define getSizeOfStructuredField(s,m)
+

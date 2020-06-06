@@ -34,6 +34,8 @@
 #include "CharacterErrors.h"
 #include "WorldSocket.h"
 #include "Auth/MD5.h"
+#include "Packets/SmsgNotification.h"
+#include "Packets/SmsgLogoutComplete.h"
 
 using namespace AscEmu::Packets;
 
@@ -431,7 +433,7 @@ void WorldSession::LogoutPlayer(bool Save)
         delete _player;
         _player = nullptr;
 
-        OutPacket(SMSG_LOGOUT_COMPLETE, 0, nullptr);
+        SendPacket(SmsgLogoutComplete().serialise().get());
         LOG_DEBUG("SESSION: Sent SMSG_LOGOUT_COMPLETE Message");
     }
     _loggingOut = false;
@@ -521,9 +523,7 @@ void WorldSession::SendNotification(const char* message, ...)
     vsnprintf(msg1, 1024, message, ap);
     va_end(ap);
 
-    WorldPacket data(SMSG_NOTIFICATION, strlen(msg1) + 1);
-    data << msg1;
-    SendPacket(&data);
+    SendPacket(SmsgNotification(msg1).serialise().get());
 }
 
 void WorldSession::InitPacketHandlerTable()

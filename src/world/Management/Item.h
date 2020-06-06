@@ -27,6 +27,7 @@
 #include "Objects/Object.h"
 #include "WorldConf.h"
 #include "LootMgr.h"
+#include "Data/WoWItem.h"
 
 class Container;
 
@@ -143,6 +144,24 @@ enum scalingstatmodtypes
 /// -1 from client enchantment slot number
 enum EnchantmentSlot
 {
+#if VERSION_STRING <= TBC
+    PERM_ENCHANTMENT_SLOT           = 0,
+    TEMP_ENCHANTMENT_SLOT           = 1,
+    SOCK_ENCHANTMENT_SLOT1          = 2,
+    SOCK_ENCHANTMENT_SLOT2          = 3,
+    SOCK_ENCHANTMENT_SLOT3          = 4,
+    BONUS_ENCHANTMENT_SLOT          = 5,
+    MAX_INSPECTED_ENCHANTMENT_SLOT  = 6,
+
+    PROP_ENCHANTMENT_SLOT_0         = 6,    // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_1         = 7,    // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_2         = 8,    // used with RandomSuffix and RandomProperty
+    PROP_ENCHANTMENT_SLOT_3         = 9,    // used with RandomProperty
+    PROP_ENCHANTMENT_SLOT_4         = 10,   // used with RandomProperty
+    MAX_ENCHANTMENT_SLOT            = 11
+#endif
+
+#if VERSION_STRING == WotLK
     PERM_ENCHANTMENT_SLOT           = 0,
     TEMP_ENCHANTMENT_SLOT           = 1,
     SOCK_ENCHANTMENT_SLOT1          = 2,
@@ -150,26 +169,35 @@ enum EnchantmentSlot
     SOCK_ENCHANTMENT_SLOT3          = 4,
     BONUS_ENCHANTMENT_SLOT          = 5,
     PRISMATIC_ENCHANTMENT_SLOT      = 6,
-#if VERSION_STRING < Cata
     MAX_INSPECTED_ENCHANTMENT_SLOT  = 7,
 
-    PROP_ENCHANTMENT_SLOT_0         = 7,        /// used with RandomSuffix
-    PROP_ENCHANTMENT_SLOT_1         = 8,        /// used with RandomSuffix
-    PROP_ENCHANTMENT_SLOT_2         = 9,        /// used with RandomSuffix and RandomProperty
-    PROP_ENCHANTMENT_SLOT_3         = 10,       /// used with RandomProperty
-    PROP_ENCHANTMENT_SLOT_4         = 11,       /// used with RandomProperty
+    PROP_ENCHANTMENT_SLOT_0         = 7,    // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_1         = 8,    // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_2         = 9,    // used with RandomSuffix and RandomProperty
+    PROP_ENCHANTMENT_SLOT_3         = 10,   // used with RandomProperty
+    PROP_ENCHANTMENT_SLOT_4         = 11,   // used with RandomProperty
     MAX_ENCHANTMENT_SLOT            = 12
-#else
-    REFORGE_ENCHANTMENT_SLOT = 8,
-    TRANSMOGRIFY_ENCHANTMENT_SLOT = 9,
-    MAX_INSPECTED_ENCHANTMENT_SLOT = 10,
+#endif
 
-    PROP_ENCHANTMENT_SLOT_0 = 10,   // used with RandomSuffix
-    PROP_ENCHANTMENT_SLOT_1 = 11,   // used with RandomSuffix
-    PROP_ENCHANTMENT_SLOT_2 = 12,   // used with RandomSuffix and RandomProperty
-    PROP_ENCHANTMENT_SLOT_3 = 13,   // used with RandomProperty
-    PROP_ENCHANTMENT_SLOT_4 = 14,   // used with RandomProperty
-    MAX_ENCHANTMENT_SLOT = 15
+#if VERSION_STRING >= Cata
+    PERM_ENCHANTMENT_SLOT           = 0,
+    TEMP_ENCHANTMENT_SLOT           = 1,
+    SOCK_ENCHANTMENT_SLOT1          = 2,
+    SOCK_ENCHANTMENT_SLOT2          = 3,
+    SOCK_ENCHANTMENT_SLOT3          = 4,
+    BONUS_ENCHANTMENT_SLOT          = 5,
+    PRISMATIC_ENCHANTMENT_SLOT      = 6,
+
+    REFORGE_ENCHANTMENT_SLOT        = 8,
+    TRANSMOGRIFY_ENCHANTMENT_SLOT   = 9,
+    MAX_INSPECTED_ENCHANTMENT_SLOT  = 10,
+
+    PROP_ENCHANTMENT_SLOT_0         = 10,   // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_1         = 11,   // used with RandomSuffix
+    PROP_ENCHANTMENT_SLOT_2         = 12,   // used with RandomSuffix and RandomProperty
+    PROP_ENCHANTMENT_SLOT_3         = 13,   // used with RandomProperty
+    PROP_ENCHANTMENT_SLOT_4         = 14,   // used with RandomProperty
+    MAX_ENCHANTMENT_SLOT            = 15
 #endif
 };
 
@@ -222,7 +250,6 @@ public:
     void removeFlags(uint32_t flags);
     bool hasFlags(uint32_t flags) const;
 
-#if VERSION_STRING >= WotLK
     uint32_t getEnchantmentId(uint8_t index) const;
     void setEnchantmentId(uint8_t index, uint32_t id);
 
@@ -231,7 +258,6 @@ public:
 
     uint32_t getEnchantmentCharges(uint8_t index) const;
     void setEnchantmentCharges(uint8_t index, uint32_t charges);
-#endif
 
     uint32_t getPropertySeed() const;
     void setPropertySeed(uint32_t seed);
@@ -285,17 +311,7 @@ public:
             random_suffix = id;
         }
 
-
 #if VERSION_STRING <= TBC
-        uint32 getEnchantmentId(uint32 index) { return getUInt32Value(ITEM_FIELD_ENCHANTMENT + 3 * index); }
-        void setEnchantmentId(uint32 index, uint32 value) { setUInt32Value(ITEM_FIELD_ENCHANTMENT + 3 * index, value); }
-
-        uint32 getEnchantmentDuration(uint32 index) { return getUInt32Value(ITEM_FIELD_ENCHANTMENT + 1 + 3 * index); }
-        void setEnchantmentDuration(uint32 index, uint32 value) { setUInt32Value(ITEM_FIELD_ENCHANTMENT + 1 + 3 * index, value); }
-
-        uint32 getEnchantmentCharges(uint32 index) { return getUInt32Value(ITEM_FIELD_ENCHANTMENT + 2 + 3 * index); }
-        void setEnchantmentCharges(uint32 index, uint32 value) { setUInt32Value(ITEM_FIELD_ENCHANTMENT + 2 + 3 * index, value); }
-
         void setTextId(uint32 textId);
 #endif
 
@@ -450,7 +466,7 @@ public:
 
         ItemProperties const* m_itemProperties;
         EnchantmentMap Enchantments;
-        uint32 _fields[ITEM_END];   /// this mem is wasted in case of container... but this will be fixed in future
+        uint32 _fields[getSizeOfStructure(WoWItem)];   /// this mem is wasted in case of container... but this will be fixed in future
         Player* m_owner;            /// let's not bother the manager with unneeded requests
         uint32 random_prop;
         uint32 random_suffix;

@@ -55,7 +55,14 @@
 #include "SpellMgr.h"
 #include "SpellAuras.h"
 #include "Map/WorldCreatorDefines.hpp"
+#include "Server/Packets/SmsgSpellFailure.h"
+#include "Server/Packets/SmsgSpellFailedOther.h"
+#include "Server/Packets/SmsgSpellHealLog.h"
+#include "Server/Packets/SmsgResurrectRequest.h"
+#include "Server/Packets/SmsgSpellDelayed.h"
+#include "Server/Packets/SmsgCancelCombat.h"
 
+using namespace AscEmu::Packets;
 
 using AscEmu::World::Spell::Helpers::decimalToMask;
 using AscEmu::World::Spell::Helpers::spellModFlatFloatValue;
@@ -1266,10 +1273,7 @@ void Spell::AddTime(uint32 type)
                     delay = 1;
             }
 
-            WorldPacket data(SMSG_SPELL_DELAYED, 13);
-            data << u_caster->GetNewGUID();
-            data << uint32(delay);
-            u_caster->SendMessageToSet(&data, true);
+            u_caster->SendMessageToSet(SmsgSpellDelayed(u_caster->GetNewGUID(), delay).serialise().get(), true);
 
             if (p_caster == nullptr)
             {
@@ -1349,7 +1353,7 @@ void Spell::finish(bool successful)
         {
             p_caster->EventAttackStop();
             p_caster->smsg_AttackStop(p_caster->GetMapMgr()->GetUnit(p_caster->GetSelection()));
-            p_caster->GetSession()->OutPacket(SMSG_CANCEL_COMBAT);
+            p_caster->SendPacket(SmsgCancelCombat().serialise().get());
         }
 
         if (m_requiresCP && !GetSpellFailed())
@@ -1679,7 +1683,7 @@ void Spell::writeSpellGoTargets(WorldPacket* data)
     }
 }
 
-// Not called
+//\todo: Not called, should be send after targetting
 void Spell::SendLogExecute(uint32 spellDamage, uint64 & targetGuid)
 {
     WorldPacket data(SMSG_SPELLLOGEXECUTE, 37);
@@ -1702,8 +1706,6 @@ void Spell::SendInterrupted(uint8 result)
     if (m_caster == nullptr || !m_caster->IsInWorld())
         return;
 
-    WorldPacket data(SMSG_SPELL_FAILURE, 20);
-
     // send the failure to pet owner if we're a pet
     Player* plr = p_caster;
     if (plr == nullptr && m_caster->isPet())
@@ -1716,34 +1718,29 @@ void Spell::SendInterrupted(uint8 result)
             plr = u_caster->m_redirectSpellPackets;
 
         if (plr != nullptr && plr->isPlayer())
-        {
-            data << m_caster->GetNewGUID();
-            data << uint8(extra_cast_number);
-            data << uint32(m_spellInfo->getId());
-            data << uint8(result);
-
-            plr->GetSession()->SendPacket(&data);
-        }
+            plr->GetSession()->SendPacket(SmsgSpellFailure(m_caster->GetNewGUID(), extra_cast_number, m_spellInfo->getId(), result).serialise().get());
     }
 
-    data.Initialize(SMSG_SPELL_FAILED_OTHER);
-
-    data << m_caster->GetNewGUID();
-    data << uint8(extra_cast_number);
-    data << uint32(getSpellInfo()->getId());
-    data << uint8(result);
-
-    m_caster->SendMessageToSet(&data, false);
+    m_caster->SendMessageToSet(SmsgSpellFailedOther(m_caster->GetNewGUID(), extra_cast_number, m_spellInfo->getId(), result).serialise().get(), false);
 }
 
 void Spell::SendResurrectRequest(Player* target)
 {
-    WorldPacket data(SMSG_RESURRECT_REQUEST, 13);
-    data << m_caster->getGuid();
-    data << uint32(0);
-    data << uint8(0);
+    bool resurrectionSickness = false;
+    std::string casterName;
+    if (!m_caster->isPlayer() && m_caster->isCreature())
+    {
+        casterName = dynamic_cast<Creature*>(m_caster)->GetCreatureProperties()->Name;
 
-    target->GetSession()->SendPacket(&data);
+        if (dynamic_cast<Creature*>(m_caster)->isSpiritHealer())
+            resurrectionSickness = true;
+    }
+
+    bool overrideTimer = false;
+    if (m_spellInfo->getAttributesExC() & ATTRIBUTESEXC_IGNORE_RESURRECTION_TIMER)
+        overrideTimer = true;
+
+    target->GetSession()->SendPacket(SmsgResurrectRequest(m_caster->getGuid(), casterName, resurrectionSickness, overrideTimer, m_spellInfo->getId()).serialise().get());
     target->m_resurrecter = m_caster->getGuid();
 }
 
@@ -3773,7 +3770,7 @@ void Spell::HandleTeleport(float x, float y, float z, uint32 mapid, Unit* Target
         data << Target->GetPositionX();
         data << Target->GetPositionY();
         data << Target->GetPositionZ();
-        data <<Util::getMSTime();
+        data << Util::getMSTime();
         data << uint8(0x00);
         data << uint32(256);
         data << uint32(1);
@@ -3801,16 +3798,7 @@ void Spell::SendHealSpellOnPlayer(Object* caster, Object* target, uint32 healed,
     if (caster == nullptr || target == nullptr || !target->isPlayer())
         return;
 
-    WorldPacket data(SMSG_SPELLHEALLOG, 33);
-    data << target->GetNewGUID();
-    data << caster->GetNewGUID();
-    data << spellid;
-    data << healed;
-    data << overhealed;
-    data << absorbed;
-    data << uint8(critical);
-
-    caster->SendMessageToSet(&data, true);
+    caster->SendMessageToSet(SmsgSpellHealLog(target->GetNewGUID(), caster->GetNewGUID(), spellid, healed, overhealed, absorbed, critical).serialise().get(), true);
 }
 
 void Spell::Heal(int32 amount, bool ForceCrit)

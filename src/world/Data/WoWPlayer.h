@@ -63,8 +63,9 @@ union
     struct
     {
         uint8_t gender;
-        uint16_t drunk_value;   // not sure
+        uint8_t drunk_value;
         uint8_t pvp_rank;
+        uint8_t arena_faction;
     } s;
     uint32_t raw;
 } typedef player_bytes_3_union;
@@ -96,7 +97,7 @@ union
 #if VERSION_STRING == Classic
 #define WOWPLAYER_QUEST_COUNT 20
 #define WOWPLAYER_VISIBLE_ITEM_COUNT 19
-#define WOWPLAYER_VISIBLE_ITEM_UNK0_COUNT 8
+#define WOWPLAYER_VISIBLE_ITEM_UNK0_COUNT 7
 
 #define WOWPLAYER_INVENTORY_SLOT_COUNT 23
 #define WOWPLAYER_PACK_SLOT_COUNT 16
@@ -113,13 +114,15 @@ union
 
 struct WoWPlayer_Quest
 {
-    uint32_t unk1;  // id
-    uint64_t unk2;  // 4 x uint16_t mob_or_go_count
+    uint32_t quest_id;
+    uint32_t required_count_state;
+    uint32_t expire_time;
 };
 
 struct WoWPlayer_VisibleItem
 {
     uint64_t creator;
+    uint32_t entry;
     uint32_t unk0[WOWPLAYER_VISIBLE_ITEM_UNK0_COUNT];
     uint32_t properties;
     uint32_t padding;
@@ -164,8 +167,8 @@ struct WoWPlayer : WoWUnit
     uint32_t field_coinage;
     uint32_t pos_stat[WOWPLAYER_STAT_COUNT];
     uint32_t neg_stat[WOWPLAYER_STAT_COUNT];
-    uint32_t resistance_buff_mod_pos[WOWPLAYER_SPELL_SCHOOL_COUNT];
-    uint32_t resistance_buff_mod_neg[WOWPLAYER_SPELL_SCHOOL_COUNT];
+    uint32_t resistance_buff_mod_positive[WOWPLAYER_SPELL_SCHOOL_COUNT];
+    uint32_t resistance_buff_mod_negative[WOWPLAYER_SPELL_SCHOOL_COUNT];
     uint32_t field_mod_damage_done_positive[WOWPLAYER_SPELL_SCHOOL_COUNT];
     uint32_t field_mod_damage_done_negative[WOWPLAYER_SPELL_SCHOOL_COUNT];
     float field_mod_damage_done_pct[WOWPLAYER_SPELL_SCHOOL_COUNT];
@@ -192,7 +195,7 @@ struct WoWPlayer : WoWUnit
 #elif VERSION_STRING == TBC
 #define WOWPLAYER_QUEST_COUNT 25
 #define WOWPLAYER_VISIBLE_ITEM_COUNT 19
-#define WOWPLAYER_VISIBLE_ITEM_0_COUNT 12
+#define WOWPLAYER_VISIBLE_ITEM_UNK0_COUNT 11
 #define WOWPLAYER_INVENTORY_SLOT_COUNT 23
 #define WOWPLAYER_PACK_SLOT_COUNT 16
 #define WOWPLAYER_BANK_SLOT_COUNT 28
@@ -205,22 +208,35 @@ struct WoWPlayer : WoWUnit
 #define WOWPLAYER_EXPLORED_ZONES_COUNT 128
 #define WOWPLAYER_BUY_BACK_COUNT 12
 #define WOWPLAYER_COMBAT_RATING_COUNT 24
-#define WOWPLAYER_ARENA_TEAM_INFO_COUNT 18
+#define WOWPLAYER_ARENA_TEAM_SLOTS 3
 #define WOWPLAYER_DAILY_QUESTS_COUNT 25
+#define WOWPLAYER_KNOWN_TITLES_SIZE 1
 
 struct WoWPlayer_Quest
 {
-    uint32_t unk1;  // id
-    uint32_t unk2;  // state
-    uint64_t unk3;  // 4 x uint16_t mob_or_go_count
+    uint32_t quest_id;
+    uint32_t state;
+    uint32_t required_mob_or_go;
+    uint32_t expire_time;
 };
 
 struct WoWPlayer_VisibleItem
 {
     uint64_t creator;
-    uint32_t visible_items[WOWPLAYER_VISIBLE_ITEM_0_COUNT];
+    uint32_t entry;
+    uint32_t unk0[WOWPLAYER_VISIBLE_ITEM_UNK0_COUNT];
     uint32_t properties;
     uint32_t padding;
+};
+
+struct WoWPlayer_ArenaTeamInfo
+{
+    uint32_t team_id;
+    uint32_t member_rank;
+    uint32_t games_week;
+    uint32_t games_season;
+    uint32_t wins_season;
+    uint32_t personal_rating;
 };
 
 struct WoWPlayer : WoWUnit
@@ -247,7 +263,7 @@ struct WoWPlayer : WoWUnit
     uint64_t key_ring_slot[WOWPLAYER_KEYRING_SLOT_COUNT];
     uint64_t vanity_pet_slot[WOWPLAYER_VANITY_PET_SLOT_COUNT];
     uint64_t farsight_guid;
-    uint64_t known_titles;
+    uint64_t field_known_titles[WOWPLAYER_KNOWN_TITLES_SIZE];
     uint32_t xp;
     uint32_t next_level_xp;
     uint32_t skill_info[WOWPLAYER_SKILL_INFO_COUNT];
@@ -287,7 +303,7 @@ struct WoWPlayer : WoWUnit
     player_field_bytes_2_union player_field_bytes_2;
     uint32_t field_watched_faction_idx;
     uint32_t field_combat_rating[WOWPLAYER_COMBAT_RATING_COUNT];
-    uint32_t field_arena_team_info[WOWPLAYER_ARENA_TEAM_INFO_COUNT];
+    WoWPlayer_ArenaTeamInfo field_arena_team_info[WOWPLAYER_ARENA_TEAM_SLOTS];
     uint32_t field_honor_currency;
     uint32_t field_arena_currency;
     float field_mod_mana_regen;
@@ -309,24 +325,36 @@ struct WoWPlayer : WoWUnit
 #define WOWPLAYER_SPELL_SCHOOL_COUNT 7
 #define WOWPLAYER_BUY_BACK_COUNT 12
 #define WOWPLAYER_COMBAT_RATING_COUNT 25
-#define WOWPLAYER_ARENA_TEAM_INFO_COUNT 21
+#define WOWPLAYER_ARENA_TEAM_SLOTS 3
 #define WOWPLAYER_DAILY_QUESTS_COUNT 25
 #define WOWPLAYER_RUNE_REGEN_COUNT 4
 #define WOWPLAYER_NO_REAGENT_COST_COUNT 3
 #define WOWPLAYER_GLYPH_SLOT_COUNT 6
+#define WOWPLAYER_KNOWN_TITLES_SIZE 3
 
 struct WoWPlayer_Quest
 {
-    uint32_t unk1;  // id
-    uint32_t unk2;  // state
-    uint64_t unk3;  // 4 x uint16_t mob_or_go_count
-    uint32_t unk5;  // time
+    uint32_t quest_id;
+    uint32_t state;
+    uint64_t required_mob_or_go;
+    uint32_t expire_time;
 };
 
 struct WoWPlayer_VisibleItem
 {
     uint32_t entry;
     uint32_t enchantment;
+};
+
+struct WoWPlayer_ArenaTeamInfo
+{
+    uint32_t team_id;
+    uint32_t type;
+    uint32_t member_rank;
+    uint32_t games_week;
+    uint32_t games_season;
+    uint32_t wins_season;
+    uint32_t personal_rating;
 };
 
 struct WoWPlayer : WoWUnit
@@ -353,9 +381,7 @@ struct WoWPlayer : WoWUnit
     uint64_t key_ring_slot[WOWPLAYER_KEYRING_SLOT_COUNT];
     uint64_t currencytoken_slot[WOWPLAYER_CURRENCY_TOKEN_SLOT_COUNT];
     uint64_t farsight_guid;
-    uint64_t field_known_titles;
-    uint64_t field_known_titles1;
-    uint64_t field_known_titles2;
+    uint64_t field_known_titles[WOWPLAYER_KNOWN_TITLES_SIZE];
     uint64_t field_known_currencies;
     uint32_t xp;
     uint32_t next_level_xp;
@@ -399,12 +425,12 @@ struct WoWPlayer : WoWUnit
     player_field_bytes_2_union player_field_bytes_2;
     uint32_t field_watched_faction_idx;
     uint32_t field_combat_rating[WOWPLAYER_COMBAT_RATING_COUNT];
-    uint32_t field_arena_team_info[WOWPLAYER_ARENA_TEAM_INFO_COUNT];
+    WoWPlayer_ArenaTeamInfo field_arena_team_info[WOWPLAYER_ARENA_TEAM_SLOTS];
     uint32_t field_honor_currency;
     uint32_t field_arena_currency;
     uint32_t field_max_level;
     uint32_t field_daily_quests[WOWPLAYER_DAILY_QUESTS_COUNT];
-    uint32_t rune_regen[WOWPLAYER_RUNE_REGEN_COUNT];
+    float rune_regen[WOWPLAYER_RUNE_REGEN_COUNT];
     uint32_t no_reagent_cost[WOWPLAYER_NO_REAGENT_COST_COUNT];
     uint32_t field_glyph_slots[WOWPLAYER_GLYPH_SLOT_COUNT];
     uint32_t field_glyphs[WOWPLAYER_GLYPH_SLOT_COUNT];
@@ -415,6 +441,7 @@ struct WoWPlayer : WoWUnit
 #define WOWPLAYER_EXPLORED_ZONES_COUNT 156
 #define WOWPLAYER_SPELL_SCHOOL_COUNT 7
 #define WOWPLAYER_BUY_BACK_COUNT 12
+#define WOWPLAYER_ARENA_TEAM_SLOTS 3
 #define WOWPLAYER_DAILY_QUESTS_COUNT 25
 #define WOWPLAYER_QUEST_COUNT 50
 #define WOWPLAYER_VISIBLE_ITEM_COUNT 19
@@ -424,20 +451,34 @@ struct WoWPlayer : WoWUnit
 #define WOWPLAYER_BANK_BAG_SLOT_COUNT 7
 #define WOWPLAYER_KEYRING_SLOT_COUNT 32
 #define WOWPLAYER_CURRENCY_TOKEN_SLOT_COUNT 32
+#define WOWPLAYER_NO_REAGENT_COST_COUNT 3
 #define WOWPLAYER_GLYPH_SLOT_COUNT 9
+#define WOWPLAYER_KNOWN_TITLES_SIZE 4
+#define WOWPLAYER_SKILL_INFO_COUNT 384
 
 struct WoWPlayer_Quest
 {
-    uint32_t unk1;  // id
-    uint32_t unk2;  // state
-    uint64_t unk3;  // 4 x uint16_t mob_or_go_count
-    uint32_t unk5;  // time
+    uint32_t quest_id;
+    uint32_t state;
+    uint64_t required_mob_or_go;
+    uint32_t expire_time;
 };
 
 struct WoWPlayer_VisibleItem
 {
     uint32_t entry;
     uint32_t enchantment;
+};
+
+struct WoWPlayer_ArenaTeamInfo
+{
+    uint32_t team_id;
+    uint32_t type;
+    uint32_t member_rank;
+    uint32_t games_week;
+    uint32_t games_season;
+    uint32_t wins_season;
+    uint32_t personal_rating;
 };
 
 struct WoWPlayer : WoWUnit
@@ -463,18 +504,24 @@ struct WoWPlayer : WoWUnit
     uint64_t bank_bag_slot[WOWPLAYER_BANK_BAG_SLOT_COUNT];
     uint64_t vendor_buy_back_slot[WOWPLAYER_BUY_BACK_COUNT];
     uint64_t farsight_guid;
-    uint64_t known_titles;
-    uint64_t known_titles1;
-    uint64_t known_titles2;
-    uint64_t known_titles3;
+    uint64_t field_known_titles[WOWPLAYER_KNOWN_TITLES_SIZE];
     uint32_t xp;
     uint32_t next_level_xp;
-    uint32_t skill_line[64];
-    uint32_t skill_step[64];
-    uint32_t skill_rank[64];
-    uint32_t skill_max_rank[64];
-    uint32_t skill_mod[64];
-    uint32_t skill_talent[64];
+
+    union
+    {
+        struct
+        {
+            uint32_t skill_line[64];
+            uint32_t skill_step[64];
+            uint32_t skill_rank[64];
+            uint32_t skill_max_rank[64];
+            uint32_t skill_mod[64];
+            uint32_t skill_talent[64];
+        } skill_info_parts;
+        uint32_t skill_info[WOWPLAYER_SKILL_INFO_COUNT];
+    };
+
     uint32_t character_points_1;
     uint32_t track_creatures;
     uint32_t track_resources;
@@ -514,12 +561,12 @@ struct WoWPlayer : WoWUnit
     player_field_bytes_2_union player_field_bytes_2;
     uint32_t field_watched_faction_idx;
     uint32_t field_combat_rating[26];
-    uint32_t field_arena_team_info[21];
+    WoWPlayer_ArenaTeamInfo field_arena_team_info[WOWPLAYER_ARENA_TEAM_SLOTS];
     uint32_t battleground_rating;
     uint32_t field_max_level;
     uint32_t field_daily_quests[WOWPLAYER_DAILY_QUESTS_COUNT];
     float rune_regen[4];
-    uint32_t no_reagent_cost[3];
+    uint32_t no_reagent_cost[WOWPLAYER_NO_REAGENT_COST_COUNT];
     uint32_t field_glyph_slots[WOWPLAYER_GLYPH_SLOT_COUNT];
     uint32_t field_glyphs[WOWPLAYER_GLYPH_SLOT_COUNT];
     uint32_t glyphs_enabled;
@@ -539,6 +586,7 @@ struct WoWPlayer : WoWUnit
 #define WOWPLAYER_EXPLORED_ZONES_COUNT 200
 #define WOWPLAYER_SPELL_SCHOOL_COUNT 7
 #define WOWPLAYER_BUY_BACK_COUNT 12
+#define WOWPLAYER_ARENA_TEAM_SLOTS 3
 #define WOWPLAYER_DAILY_QUESTS_COUNT 25
 #define WOWPLAYER_QUEST_COUNT 150
 #define WOWPLAYER_VISIBLE_ITEM_COUNT 19
@@ -548,19 +596,35 @@ struct WoWPlayer : WoWUnit
 #define WOWPLAYER_BANK_BAG_SLOT_COUNT 7
 #define WOWPLAYER_KEYRING_SLOT_COUNT 32
 #define WOWPLAYER_CURRENCY_TOKEN_SLOT_COUNT 32
+#define WOWPLAYER_KNOWN_TITLES_SIZE 5
+#define WOWPLAYER_SKILL_INFO_COUNT 448
+#define WOWPLAYER_NO_REAGENT_COST_COUNT 4
 
 struct WoWPlayer_Quest
 {
-    uint32_t unk1;  // id
-    uint32_t unk2;  // state
-    uint64_t unk3;  // 4 x uint16_t mob_or_go_count
-    uint32_t unk5;  // time
+    uint32_t quest_id;
+    uint32_t state;
+    uint64_t required_mob_or_go;
+    uint32_t expire_time;
 };
 
 struct WoWPlayer_VisibleItem
 {
     uint32_t entry;
     uint32_t enchantment;
+};
+
+//\todo: guessed structure
+struct WoWPlayer_ArenaTeamInfo
+{
+    uint32_t team_id;
+    uint32_t type;
+    uint32_t member_rank;
+    uint32_t games_week;
+    uint32_t games_season;
+    uint32_t wins_season;
+    uint32_t personal_rating;
+    uint32_t unk;
 };
 
 struct WoWPlayer : WoWUnit
@@ -589,21 +653,26 @@ struct WoWPlayer : WoWUnit
     uint64_t bank_bag_slot[WOWPLAYER_BANK_BAG_SLOT_COUNT];
     uint64_t vendor_buy_back_slot[WOWPLAYER_BUY_BACK_COUNT];
     uint64_t farsight_guid;
-    uint64_t known_titles;
-    uint64_t known_titles1;
-    uint64_t known_titles2;
-    uint64_t known_titles3;
-    uint64_t known_titles4;
+    uint64_t field_known_titles[WOWPLAYER_KNOWN_TITLES_SIZE];
     uint64_t field_coinage;
     uint32_t xp;
     uint32_t next_level_xp;
-    uint32_t skill_line[64];
-    uint32_t skill_step[64];
-    uint32_t skill_rank[64];
-    uint32_t skill_starting_rank[64];
-    uint32_t skill_max_rank[64];
-    uint32_t skill_mod[64];
-    uint32_t skill_talent[64];
+
+    union
+    {
+        struct
+        {
+            uint32_t skill_line[64];
+            uint32_t skill_step[64];
+            uint32_t skill_rank[64];
+            uint32_t skill_starting_rank[64];
+            uint32_t skill_max_rank[64];
+            uint32_t skill_mod[64];
+            uint32_t skill_talent[64];
+        } skill_info_parts;
+        uint32_t skill_info[WOWPLAYER_SKILL_INFO_COUNT];
+    };
+
     uint32_t character_points_1;
     uint32_t max_talent_tiers;
     uint32_t track_creatures;
@@ -649,10 +718,10 @@ struct WoWPlayer : WoWUnit
     uint32_t field_lifetime_honorable_kills;
     uint32_t field_watched_faction_idx;
     uint32_t field_combat_rating[27];
-    uint32_t field_arena_team_info[24];
+    WoWPlayer_ArenaTeamInfo field_arena_team_info[WOWPLAYER_ARENA_TEAM_SLOTS];
     uint32_t field_max_level;
     float rune_regen[4];
-    uint32_t no_reagent_cost[4];
+    uint32_t no_reagent_cost[WOWPLAYER_NO_REAGENT_COST_COUNT];
     uint32_t field_glyph_slots[6];
     uint32_t field_glyphs[6];
     uint32_t glyphs_enabled;

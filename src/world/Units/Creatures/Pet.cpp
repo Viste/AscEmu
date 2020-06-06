@@ -36,6 +36,9 @@
 #include "Spell/Definitions/PowerType.h"
 #include "Spell/Definitions/SpellEffectTarget.h"
 #include "Pet.h"
+#include "Server/Packets/SmsgPetActionFeedback.h"
+#include "Server/Packets/SmsgPetLearnedSpell.h"
+#include "Server/Packets/SmsgPetUnlearnedSpell.h"
 
 #define WATER_ELEMENTAL         510
 #define WATER_ELEMENTAL_NEW     37994
@@ -460,7 +463,7 @@ bool Pet::CreateAsSummon(uint32 entry, CreatureProperties const* ci, Creature* c
     setSummonedByGuid(owner->getGuid());
     setCreatedByGuid(owner->getGuid());
 
-    setUInt32Value(UNIT_FIELD_BYTES_0, 2048 | (0 << 24));
+    setBytes0(2048 | (0 << 24));
 
     setBaseAttackTime(MELEE, 2000);
     setBaseAttackTime(OFFHAND, 2000);
@@ -808,7 +811,7 @@ void Pet::SendActionFeedback(PetActionFeedback value)
     if (m_Owner == NULL || m_Owner->GetSession() == NULL)
         return;
 
-    m_Owner->GetSession()->OutPacket(SMSG_PET_ACTION_FEEDBACK, 1, &value);
+    m_Owner->SendPacket(AscEmu::Packets::SmsgPetActionFeedback(value).serialise().get());
 }
 
 void Pet::InitializeSpells()
@@ -952,7 +955,7 @@ void Pet::LoadFromDB(Player* owner, PlayerPet* pi)
     setBaseAttackTime(OFFHAND, 2000);
     setModCastSpeed(1.0f);          // better set this one
 
-    setUInt32Value(UNIT_FIELD_BYTES_0, 2048 | (0 << 24));
+    setBytes0(2048 | (0 << 24));
 
     if (pi->type == WARLOCKPET)
     {
@@ -1514,11 +1517,9 @@ void Pet::AddSpell(SpellInfo const* sp, bool learning, bool showLearnSpell)
 
 #if VERSION_STRING > TBC
     if (showLearnSpell && m_Owner && m_Owner->GetSession() && !(sp->getAttributes() & ATTRIBUTES_NO_CAST))
-    {
-        auto id = sp->getId();
-        m_Owner->GetSession()->OutPacket(SMSG_PET_LEARNED_SPELL, 2, &id);
-    }
+        m_Owner->SendPacket(AscEmu::Packets::SmsgPetLearnedSpell(sp->getId()).serialise().get());
 #endif
+
     if (IsInWorld())
         SendSpellsToOwner();
 }
@@ -1648,10 +1649,7 @@ void Pet::RemoveSpell(SpellInfo const* sp, bool showUnlearnSpell)
 
 #if VERSION_STRING > TBC
     if (showUnlearnSpell && m_Owner && m_Owner->GetSession())
-    {
-        auto id = sp->getId();
-        m_Owner->GetSession()->OutPacket(SMSG_PET_UNLEARNED_SPELL, 4, &id);
-    }
+        m_Owner->SendPacket(AscEmu::Packets::SmsgPetUnlearnedSpell(sp->getId()).serialise().get());
 #endif
 }
 

@@ -23,6 +23,23 @@
 
 #include "Units/Players/Player.h"
 
+//MIT
+struct ArenaTeamPacketList
+{
+    uint64_t guid;
+    uint8_t isLoggedIn;
+    std::string name;
+    uint32_t isLeader;
+    uint8_t lastLevel;
+    uint8_t cl;
+
+    uint32_t playedWeek;
+    uint32_t wonWeek;
+    uint32_t playedSeason;
+    uint32_t wonSeason;
+    uint32_t rating;
+};
+
 struct ArenaTeamMember
 {
     PlayerInfo* Info;
@@ -54,23 +71,52 @@ struct ArenaTeamStats
 
 class SERVER_DECL ArenaTeam
 {
-        void AllocateSlots(uint16 Type)
+    public:
+
+        ArenaTeam(uint16 Type, uint32 Id);
+        ArenaTeam(Field* f);
+        ~ArenaTeam()
         {
-            uint32 Slots = 0;
-            if (Type == ARENA_TEAM_TYPE_2V2)
-                Slots = 4;
-            else if (Type == ARENA_TEAM_TYPE_3V3)
-                Slots = 6;
-            else if (Type == ARENA_TEAM_TYPE_5V5)
-                Slots = 10;
-            ARCEMU_ASSERT(Slots > 0);
-            m_members = new ArenaTeamMember[Slots];
-            memset(m_members, 0, sizeof(ArenaTeamMember)*Slots);
-            m_slots = Slots;
-            m_memberCount = 0;
+            delete [] m_members;
         }
 
-    public:
+    
+        void SaveToDB();
+
+        void Destroy();
+
+        void SendPacket(WorldPacket* data);
+        
+
+        bool AddMember(PlayerInfo* info);
+        bool RemoveMember(PlayerInfo* info);
+
+        bool isMember(uint32_t guid) const;
+
+        void SetLeader(PlayerInfo* info);
+        ArenaTeamMember* GetMember(PlayerInfo* info);
+        ArenaTeamMember* GetMemberByGuid(uint32 guid);
+
+        uint32 GetPlayersPerTeam()
+        {
+            switch (m_type)
+            {
+                case ARENA_TEAM_TYPE_2V2:
+                    return 2;
+
+                case ARENA_TEAM_TYPE_3V3:
+                    return 3;
+
+                case ARENA_TEAM_TYPE_5V5:
+                    return 5;
+
+                default:
+                    return 2;
+            }
+        }
+
+        //MIT
+        std::vector<ArenaTeamPacketList> getRoosterMembers() const;
 
         uint32 m_id;
         uint16_t m_type;
@@ -84,42 +130,22 @@ class SERVER_DECL ArenaTeam
 
         ArenaTeamStats m_stats;
 
-        ArenaTeam(uint16 Type, uint32 Id);
-        ArenaTeam(Field* f);
-        ~ArenaTeam()
+    private:
+
+        void AllocateSlots(uint16 Type)
         {
-            delete [] m_members;
-        }
-
-        void SendPacket(WorldPacket* data);
-        void Roster(WorldPacket& data);
-        void Inspect(WorldPacket& data);
-        void Destroy();
-        void SaveToDB();
-
-        bool AddMember(PlayerInfo* info);
-        bool RemoveMember(PlayerInfo* info);
-        bool HasMember(uint32 guid);
-        void SetLeader(PlayerInfo* info);
-        ArenaTeamMember* GetMember(PlayerInfo* info);
-        ArenaTeamMember* GetMemberByGuid(uint32 guid);
-
-        uint32 GetPlayersPerTeam()
-        {
-            switch(m_type)
-            {
-                case ARENA_TEAM_TYPE_2V2:
-                    return 2;
-
-                case ARENA_TEAM_TYPE_3V3:
-                    return 3;
-
-                case ARENA_TEAM_TYPE_5V5:
-                    return 5;
-            }
-
-            // never reached
-            return 2;
+            uint32 Slots = 0;
+            if (Type == ARENA_TEAM_TYPE_2V2)
+                Slots = 4;
+            else if (Type == ARENA_TEAM_TYPE_3V3)
+                Slots = 6;
+            else if (Type == ARENA_TEAM_TYPE_5V5)
+                Slots = 10;
+            ARCEMU_ASSERT(Slots > 0)
+            m_members = new ArenaTeamMember[Slots];
+            memset(m_members, 0, sizeof(ArenaTeamMember)*Slots);
+            m_slots = Slots;
+            m_memberCount = 0;
         }
 };
 

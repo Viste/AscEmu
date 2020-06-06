@@ -35,7 +35,7 @@ public:
         }
     }
 
-    void onSelectOption(Object* pObject, Player* plr, uint32 /*Id*/, const char* /*Code*/, uint32 /*gossipId*/) override
+    void onSelectOption(Object* pObject, Player* plr, uint32_t /*Id*/, const char* /*Code*/, uint32_t /*gossipId*/) override
     {
         GossipMenu::sendSimpleMenu(pObject->getGuid(), 3558, plr);
 
@@ -43,21 +43,21 @@ public:
         if (qle == nullptr)
             return;
 
-        if (qle->GetMobCount(0) != 0)
+        if (qle->getMobCountByIndex(0) != 0)
             return;
 
-        qle->SetMobCount(0, 1);
+        qle->setMobCountForIndex(0, 1);
         qle->SendUpdateAddKill(0);
-        qle->UpdatePlayerFields();
+        qle->updatePlayerFields();
     }
 };
 
 class Wizzlecranks_Shredder : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(Wizzlecranks_Shredder);
+    ADD_CREATURE_FACTORY_FUNCTION(Wizzlecranks_Shredder)
     explicit Wizzlecranks_Shredder(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
-    void OnReachWP(uint32 iWaypointId, bool /*bForwards*/) override
+    void OnReachWP(uint32_t iWaypointId, bool /*bForwards*/) override
     {
         if (iWaypointId == 195)
         {
@@ -72,17 +72,17 @@ class Wizzlecranks_Shredder : public CreatureAIScript
             auto quest_entry = plr->GetQuestLogForEntry(863);
             if (quest_entry == nullptr)
                 return;
-            quest_entry->SendQuestComplete();
+            quest_entry->sendQuestComplete();
         }
     }
 };
 
 class Gilthares_Firebough : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(Gilthares_Firebough);
+    ADD_CREATURE_FACTORY_FUNCTION(Gilthares_Firebough)
     explicit Gilthares_Firebough(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
-    void OnReachWP(uint32 iWaypointId, bool /*bForwards*/) override
+    void OnReachWP(uint32_t iWaypointId, bool /*bForwards*/) override
     {
         if (iWaypointId == 100)
         {
@@ -97,7 +97,7 @@ class Gilthares_Firebough : public CreatureAIScript
             auto quest_entry = plr->GetQuestLogForEntry(898);
             if (quest_entry == nullptr)
                 return;
-            quest_entry->SendQuestComplete();
+            quest_entry->sendQuestComplete();
         }
     }
 };
@@ -105,7 +105,7 @@ class Gilthares_Firebough : public CreatureAIScript
 int kolkarskilled = 0;
 class VerogtheDervish : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(VerogtheDervish);
+    ADD_CREATURE_FACTORY_FUNCTION(VerogtheDervish)
     explicit VerogtheDervish(Creature* pCreature) : CreatureAIScript(pCreature) {}
     void OnDied(Unit* mKiller) override
     {

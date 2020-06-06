@@ -60,7 +60,7 @@ public:
 
 class Bartleby : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(Bartleby);
+    ADD_CREATURE_FACTORY_FUNCTION(Bartleby)
     explicit Bartleby(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
     void OnLoad() override
@@ -69,7 +69,7 @@ class Bartleby : public CreatureAIScript
         getCreature()->setEmoteState(EMOTE_ONESHOT_EAT);
     }
 
-    void OnDamageTaken(Unit* mAttacker, uint32 fAmount) override
+    void OnDamageTaken(Unit* mAttacker, uint32_t fAmount) override
     {
         if (getCreature()->getHealth() - fAmount <= getCreature()->getMaxHealth() * 0.37f)
         {
@@ -80,7 +80,7 @@ class Bartleby : public CreatureAIScript
                 QuestLogEntry* qle = (static_cast<Player*>(mAttacker))->GetQuestLogForEntry(1640);
                 if (!qle)
                     return;
-                qle->SendQuestComplete();
+                qle->sendQuestComplete();
             }
         }
     }

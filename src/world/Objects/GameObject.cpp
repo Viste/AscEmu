@@ -34,6 +34,10 @@
 #include "Server/Packets/SmsgStandstateUpdate.h"
 #include "Management/Battleground/Battleground.h"
 #include "Server/Packets/SmsgGameobjectCustomAnim.h"
+#include "Server/Packets/SmsgGameobjectPagetext.h"
+#include "Server/Packets/SmsgTriggerCinematic.h"
+#include "Server/Packets/SmsgFishEscaped.h"
+#include "Server/Packets/SmsgFishNotHooked.h"
 
 // MIT
 
@@ -163,10 +167,10 @@ GameObject::GameObject(uint64 guid)
     m_updateFlag = (UPDATEFLAG_HAS_POSITION | UPDATEFLAG_ROTATION);
 #endif
 
-    m_valuesCount = GAMEOBJECT_END;
+    m_valuesCount = getSizeOfStructure(WoWGameObject);
     m_uint32Values = _fields;
-    std::fill(m_uint32Values, &m_uint32Values[GAMEOBJECT_END], 0);
-    m_updateMask.SetCount(GAMEOBJECT_END);
+    std::fill(m_uint32Values, &m_uint32Values[getSizeOfStructure(WoWGameObject)], 0);
+    m_updateMask.SetCount(getSizeOfStructure(WoWGameObject));
 
     setOType(TYPE_GAMEOBJECT | TYPE_OBJECT);
     setGuid(guid);
@@ -1123,11 +1127,7 @@ void GameObject_Goober::onUse(Player* player)
         player->castSpell(getGuid(), gameobject_properties->goober.spell_id, false);
 
         if (gameobject_properties->goober.page_id)
-        {
-            WorldPacket data(SMSG_GAMEOBJECT_PAGETEXT, 8);
-            data << getGuid();
-            player->SendPacket(&data);
-        }
+            player->SendPacket(SmsgGameobjectPagetext(getGuid()).serialise().get());
     }
     else
     {
@@ -1140,7 +1140,7 @@ void GameObject_Goober::onUse(Player* player)
 void GameObject_Camera::onUse(Player* player)
 {
     if (gameobject_properties->camera.cinematic_id != 0)
-        player->GetSession()->OutPacket(SMSG_TRIGGER_CINEMATIC, 4, &gameobject_properties->camera.cinematic_id);
+        player->GetSession()->SendPacket(SmsgTriggerCinematic(gameobject_properties->camera.cinematic_id).serialise().get());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -1226,13 +1226,13 @@ void GameObject_FishingNode::onUse(Player* player)
         }
         else
         {
-            player->GetSession()->OutPacket(SMSG_FISH_ESCAPED);
+            player->SendPacket(SmsgFishEscaped().serialise().get());
             EndFishing(true);
         }
     }
     else
     {
-        player->GetSession()->OutPacket(SMSG_FISH_NOT_HOOKED);
+        player->SendPacket(SmsgFishNotHooked().serialise().get());
     }
 
     // Fishing is channeled spell

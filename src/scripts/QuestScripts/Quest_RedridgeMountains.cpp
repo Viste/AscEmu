@@ -22,10 +22,10 @@
 
 class Corporal_Keeshan : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(Corporal_Keeshan);
+    ADD_CREATURE_FACTORY_FUNCTION(Corporal_Keeshan)
     explicit Corporal_Keeshan(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
-    void OnReachWP(uint32 iWaypointId, bool /*bForwards*/) override
+    void OnReachWP(uint32_t iWaypointId, bool /*bForwards*/) override
     {
         if (iWaypointId == 19)
         {
@@ -41,7 +41,7 @@ class Corporal_Keeshan : public CreatureAIScript
             auto quest_entry = plr->GetQuestLogForEntry(219);
             if (quest_entry == nullptr)
                 return;
-            quest_entry->SendQuestComplete();
+            quest_entry->sendQuestComplete();
         }
     }
 };

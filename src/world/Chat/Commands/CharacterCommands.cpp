@@ -683,8 +683,8 @@ bool ChatHandler::HandleCharAddHonorKillCommand(const char* args, WorldSession* 
     player_target->m_killsToday += kill_amount;
     player_target->m_killsLifetime += kill_amount;
 #if VERSION_STRING != Classic
-    player_target->setUInt32Value(PLAYER_FIELD_KILLS, uint16(player_target->m_killsToday) | (player_target->m_killsYesterday << 16));
-    player_target->setUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, player_target->m_killsLifetime);
+    player_target->setFieldKills(uint32_t(player_target->m_killsToday | (player_target->m_killsYesterday << 16)));
+    player_target->setLifetimeHonorableKills(player_target->m_killsLifetime);
 #endif
 
     return true;
@@ -1332,9 +1332,9 @@ bool ChatHandler::HandleCharSetAllExploredCommand(const char* /*args*/, WorldSes
     GreenSystemMessage(player_target->GetSession(), "%s sets all areas as explored for you.", m_session->GetPlayer()->getName().c_str());
     sGMLog.writefromsession(m_session, "sets all areas as explored for player %s", player_target->getName().c_str());
 
-    for (uint8 i = 0; i < PLAYER_EXPLORED_ZONES_LENGTH; ++i)
+    for (uint8 i = 0; i < WOWPLAYER_EXPLORED_ZONES_COUNT; ++i)
     {
-        player_target->SetFlag(PLAYER_EXPLORED_ZONES_1 + i, 0xFFFFFFFF);
+        player_target->setExploredZone(i, 0xFFFFFFFF);
     }
 
 #if VERSION_STRING > TBC
@@ -1727,6 +1727,7 @@ bool ChatHandler::HandleCharSetTalentpointsCommand(const char* args, WorldSessio
 //.character set title
 bool ChatHandler::HandleCharSetTitleCommand(const char* args, WorldSession* m_session)
 {
+#if VERSION_STRING > Classic
     auto player_target = GetSelectedPlayer(m_session, true, true);
     if (player_target == nullptr)
         return true;
@@ -1739,10 +1740,10 @@ bool ChatHandler::HandleCharSetTitleCommand(const char* args, WorldSession* m_se
     }
     if (title == 0)
     {
-        player_target->setUInt64Value(PLAYER_FIELD_KNOWN_TITLES, 0);
+        player_target->setKnownTitles(0, 0);
 #if VERSION_STRING > TBC
-        player_target->setUInt64Value(PLAYER_FIELD_KNOWN_TITLES1, 0);
-        player_target->setUInt64Value(PLAYER_FIELD_KNOWN_TITLES2, 0);
+        player_target->setKnownTitles(1, 0);
+        player_target->setKnownTitles(2, 0);
 #endif
     }
     else if (title > 0)
@@ -1769,6 +1770,10 @@ bool ChatHandler::HandleCharSetTitleCommand(const char* args, WorldSession* m_se
     sGMLog.writefromsession(m_session, logtext.str().c_str());
 
     return true;
+#else
+    RedSystemMessage(m_session, "This command is not available for Classic!");
+    return true;
+#endif
 }
 
 //.character set forcerename

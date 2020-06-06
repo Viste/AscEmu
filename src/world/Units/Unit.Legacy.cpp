@@ -51,6 +51,11 @@
 #include "Server/Packets/SmsgAttackStart.h"
 #include "Server/Packets/SmsgAttackStop.h"
 #include "Server/Packets/SmsgPowerUpdate.h"
+#include "Server/Packets/SmsgSpellDamageShield.h"
+#include "Server/Packets/SmsgAuraUpdateAll.h"
+#include "Server/Packets/SmsgAuraUpdate.h"
+#include "Server/Packets/SmsgPeriodicAuraLog.h"
+#include "Server/Packets/SmsgAttackSwingBadFacing.h"
 
 using namespace AscEmu::Packets;
 
@@ -6806,8 +6811,8 @@ void Unit::HandleProcDmgShield(uint32 flag, Unit* attacker)
     if (m_damgeShieldsInUse)
         return;
     m_damgeShieldsInUse = true;
+
     //charges are already removed in handleproc
-    WorldPacket data(24);
     for (std::list<DamageProc>::iterator i = m_damageShields.begin(); i != m_damageShields.end();)    // Deal Damage to Attacker
     {
         std::list<DamageProc>::iterator i2 = i++; //we should not proc on proc.. not get here again.. not needed.Better safe then sorry.
@@ -6815,14 +6820,12 @@ void Unit::HandleProcDmgShield(uint32 flag, Unit* attacker)
         {
             if (PROC_MISC & (*i2).m_flags)
             {
-                data.Initialize(SMSG_SPELLDAMAGESHIELD);
-                data << this->getGuid();
-                data << attacker->getGuid();
-                data << (*i2).m_spellId;
-                data << (*i2).m_damage;
-                data << (1 << (*i2).m_school);
-                SendMessageToSet(&data, true);
-                this->DealDamage(attacker, (*i2).m_damage, 0, 0, (*i2).m_spellId);
+                if (const auto spellInfo = sSpellMgr.getSpellInfo((*i2).m_spellId))
+                {
+                    SendMessageToSet(SmsgSpellDamageShield(this->getGuid(), attacker->getGuid(), spellInfo->getId(), (*i2).m_damage, spellInfo->getSchoolMask()).serialise().get(), true);
+
+                    this->DealDamage(attacker, (*i2).m_damage, 0, 0, (*i2).m_spellId);
+                }
             }
             else
             {
@@ -7164,7 +7167,9 @@ void Unit::Strike(Unit* pVictim, uint32 weapon_damage_type, SpellInfo const* abi
     {
         if (isPlayer())
         {
-            static_cast<Player*>(this)->GetSession()->OutPacket(SMSG_ATTACKSWING_BADFACING);
+#if VERSION_STRING < Mop
+            static_cast<Player*>(this)->SendPacket(SmsgAttackSwingBadFacing().serialise().get());
+#endif
             return;
         }
     }
@@ -8092,9 +8097,11 @@ void Unit::Strike(Unit* pVictim, uint32 weapon_damage_type, SpellInfo const* abi
         if (getSummonedByGuid() != 0 && getEntry() == 19668)
         {
             Player* owner = GetMapMgr()->GetPlayer((uint32)getSummonedByGuid());
-            uint32 amount = static_cast<uint32>(owner->getMaxPower(POWER_TYPE_MANA) * 0.05f);
-            if (owner != NULL)
+            if (owner)
+            {
+                uint32 amount = static_cast<uint32>(owner->getMaxPower(POWER_TYPE_MANA) * 0.05f);
                 this->energize(owner, 34650, amount, POWER_TYPE_MANA);
+            }
         }
         //ugly hack for Bloodsworm restoring hp
         if (getSummonedByGuid() != 0 && getEntry() == 28017)
@@ -8512,7 +8519,7 @@ void Unit::AddAura(Aura* aur)
             //uint32 flag3 = aur->GetSpellProto()->Flags3;
 
             AuraCheckResponse acr;
-            WorldPacket data(21);
+            
             bool deleteAur = false;
 
             //check if we already have this aura by this caster -> update duration
@@ -9112,7 +9119,6 @@ void Unit::AddAura(Aura* aur)
             SpellInfo const* info = aur->GetSpellInfo();
             //uint32 flag3 = aur->GetSpellProto()->Flags3;
 
-            WorldPacket data(21);
             bool deleteAur = false;
 
             //check if we already have this aura by this caster -> update duration
@@ -10283,6 +10289,7 @@ void Unit::UpdateSpeed()
     if (getMountDisplayId() == 0)
     {
         setSpeedRate(TYPE_RUN, getSpeedRate(TYPE_RUN, true) * (1.0f + static_cast<float>(m_speedModifier) / 100.0f), true);
+        resetCurrentSpeeds();
     }
     else
     {
@@ -11493,13 +11500,11 @@ bool Unit::IsPoisoned()
     return false;
 }
 
-#if VERSION_STRING < Cata
 void Unit::SendFullAuraUpdate()
 {
 #if VERSION_STRING > TBC
-    WorldPacket data(SMSG_AURA_UPDATE_ALL, 200);
 
-    data << WoWGuid(GetNewGUID());
+    auto smsgAuraUpdateAll = SmsgAuraUpdateAll(GetNewGUID(), {});
 
     uint32 Updates = 0;
 
@@ -11507,149 +11512,80 @@ void Unit::SendFullAuraUpdate()
     {
         if (Aura* aur = m_auras[i])
         {
-            uint8 Flags = uint8(aur->GetAuraFlags());
+            SmsgAuraUpdateAll::AuraUpdate auraUpdate;
 
-            Flags = (AFLAG_EFFECT_1 | AFLAG_EFFECT_2 | AFLAG_EFFECT_3);
+            //\todo: investigate this.
+            auraUpdate.flags = (AFLAG_EFFECT_1 | AFLAG_EFFECT_2 | AFLAG_EFFECT_3);
 
             if (aur->IsPositive())
-                Flags |= AFLAG_CANCELLABLE;
+                auraUpdate.flags |= AFLAG_CANCELLABLE;
             else
-                Flags |= AFLAG_NEGATIVE;
+                auraUpdate.flags |= AFLAG_NEGATIVE;
 
-            if (aur->GetDuration() != 0)
-                Flags |= AFLAG_DURATION;
+            if (aur->GetDuration() > 0 && !(aur->GetSpellInfo()->getAttributesExE() & ATTRIBUTESEXE_HIDE_DURATION))
+                auraUpdate.flags |= AFLAG_DURATION;
 
-            data << uint8(aur->m_visualSlot);
-            data << uint32(aur->GetSpellId());
+            auraUpdate.visualSlot = aur->m_visualSlot;
+            auraUpdate.spellId = aur->GetSpellId();
 
-            data << uint8(Flags);
+            auraUpdate.level = getLevel();
+            auraUpdate.stackCount = m_auraStackCount[aur->m_visualSlot];
 
-            data << uint8(getLevel());
-            data << uint8(m_auraStackCount[aur->m_visualSlot]);
+            if (!(auraUpdate.flags & AFLAG_NOT_CASTER))
+                auraUpdate.casterGuid = aur->GetCasterGUID();
 
-            if ((Flags & AFLAG_NOT_CASTER) == 0)
-                data << WoWGuid(aur->GetCasterGUID());
-
-            if (Flags & AFLAG_DURATION)
+            if (auraUpdate.flags & AFLAG_DURATION)
             {
-                data << uint32(aur->GetDuration());
-                data << uint32(aur->GetTimeLeft());
+                auraUpdate.duration = aur->GetDuration();
+                auraUpdate.timeLeft = aur->GetTimeLeft();
             }
+
+            smsgAuraUpdateAll.addAuraUpdate(auraUpdate);
 
             ++Updates;
         }
     }
-    SendMessageToSet(&data, true);
+    SendMessageToSet(smsgAuraUpdateAll.serialise().get(), true);
 
     LOG_DEBUG("Full Aura Update: GUID: " I64FMT " - Updates: %u", getGuid(), Updates);
 #endif
 }
-#else
-void Unit::SendFullAuraUpdate()
-{
-    WorldPacket data(SMSG_AURA_UPDATE_ALL, 200);
 
-    data << WoWGuid(GetNewGUID());
-
-    uint32 Updates = 0;
-
-    for (uint32 i = MAX_TOTAL_AURAS_START; i < MAX_TOTAL_AURAS_END; ++i)
-    {
-        Aura* aur = m_auras[i];
-        if (aur != NULL)
-        {
-            uint8 Flags = uint8(aur->GetAuraFlags());
-
-            Flags = (AFLAG_EFFECT_1 | AFLAG_EFFECT_2 | AFLAG_EFFECT_3);
-
-            if (aur->IsPositive())
-                Flags |= AFLAG_CANCELLABLE;
-            else
-                Flags |= AFLAG_NEGATIVE;
-
-            if (aur->GetDuration() != 0)
-                Flags |= AFLAG_DURATION;
-
-            data << uint8(aur->m_visualSlot);
-            data << uint32(aur->GetSpellId());
-
-            data << uint16(Flags);
-
-            data << uint8(getLevel());
-            data << uint8(m_auraStackCount[aur->m_visualSlot]);
-
-            if ((Flags & AFLAG_NOT_CASTER) == 0)
-                data << WoWGuid(aur->GetCasterGUID());
-
-            if (Flags & AFLAG_DURATION)
-            {
-                data << uint32(aur->GetDuration());
-                data << uint32(aur->GetTimeLeft());
-            }
-
-            ++Updates;
-        }
-    }
-    SendMessageToSet(&data, true);
-
-    LOG_DEBUG("Full Aura Update: GUID: " I64FMT " - Updates: %u", getGuid(), Updates);
-}
-#endif
-
-#if VERSION_STRING < Cata
 void Unit::SendAuraUpdate(uint32 AuraSlot, bool remove)
 {
 #if VERSION_STRING > TBC
-    Aura* aur = m_auras[AuraSlot];
-    ARCEMU_ASSERT(aur != NULL);
-
-    WorldPacket data(SMSG_AURA_UPDATE, 30);
-
-    if (remove)
+    if (Aura* aur = m_auras[AuraSlot])
     {
-        data << WoWGuid(getGuid());
-        data << uint8(aur->m_visualSlot);
-        data << uint32(0);
-    }
-    else
-    {
-        uint8 flags = (AFLAG_EFFECT_1 | AFLAG_EFFECT_2 | AFLAG_EFFECT_3);
+        SmsgAuraUpdate::AuraUpdate auraUpdate;
+
+        auraUpdate.flags = (AFLAG_EFFECT_1 | AFLAG_EFFECT_2 | AFLAG_EFFECT_3);
 
         if (aur->IsPositive())
-            flags |= AFLAG_CANCELLABLE;
+            auraUpdate.flags |= AFLAG_CANCELLABLE;
         else
-            flags |= AFLAG_NEGATIVE;
+            auraUpdate.flags |= AFLAG_NEGATIVE;
 
-        if (aur->GetDuration() != 0 && !(aur->GetSpellInfo()->getAttributesExE() & ATTRIBUTESEXE_HIDE_DURATION))
-            flags |= AFLAG_DURATION;
+        if (aur->GetDuration() > 0 && !(aur->GetSpellInfo()->getAttributesExE() & ATTRIBUTESEXE_HIDE_DURATION))
+            auraUpdate.flags |= AFLAG_DURATION;
 
-        data << WoWGuid(getGuid());
-        data << uint8(aur->m_visualSlot);
+        auraUpdate.visualSlot = aur->m_visualSlot;
+        auraUpdate.spellId = aur->GetSpellId();
 
-        data << uint32(aur->GetSpellId());
-        data << uint8(flags);
+        auraUpdate.level = getLevel();
+        auraUpdate.stackCount = m_auraStackCount[aur->m_visualSlot];
 
-        Unit* caster = aur->GetUnitCaster();
-        if (caster != NULL)
-            data << uint8(caster->getLevel());
-        else
-            data << uint8(worldConfig.player.playerLevelCap);
+        if (!(auraUpdate.flags & AFLAG_NOT_CASTER))
+            auraUpdate.casterGuid = aur->GetCasterGUID();
 
-        data << uint8(m_auraStackCount[aur->m_visualSlot]);
-
-        if ((flags & AFLAG_NOT_CASTER) == 0)
-            data << WoWGuid(aur->GetCasterGUID());
-
-        if (flags & AFLAG_DURATION)
+        if (auraUpdate.flags & AFLAG_DURATION)
         {
-            data << uint32(aur->GetDuration());
-            data << uint32(aur->GetTimeLeft());
+            auraUpdate.duration = aur->GetDuration();
+            auraUpdate.timeLeft = aur->GetTimeLeft();
         }
+
+        SendMessageToSet(SmsgAuraUpdate(GetNewGUID(), auraUpdate, remove).serialise().get(), true);
     }
-
-    SendMessageToSet(&data, true);
 #endif
-
 #ifdef AE_TBC
     if (AuraSlot >= MAX_TOTAL_AURAS_END)
         return;
@@ -11676,57 +11612,6 @@ void Unit::SendAuraUpdate(uint32 AuraSlot, bool remove)
     }
 #endif
 }
-#else
-void Unit::SendAuraUpdate(uint32 AuraSlot, bool remove)
-{
-    Aura* aur = m_auras[AuraSlot];
-    ARCEMU_ASSERT(aur != NULL);
-
-    WorldPacket data(SMSG_AURA_UPDATE, 200);
-    data << WoWGuid(getGuid());
-    data << uint8(aur->m_visualSlot);
-
-    if (remove)
-    {
-        data << uint32(0);
-    }
-    else
-    {
-        data << uint32(aur->GetSpellId());
-
-        uint32 flags = (AFLAG_EFFECT_1 | AFLAG_EFFECT_2 | AFLAG_EFFECT_3);
-
-        if (aur->IsPositive())
-            flags |= AFLAG_CANCELLABLE;
-        else
-            flags |= AFLAG_NEGATIVE;
-
-        if (aur->GetDuration() != 0 && !(aur->GetSpellInfo()->getAttributesExE() & ATTRIBUTESEXE_HIDE_DURATION))
-            flags |= AFLAG_DURATION;
-
-        data << uint16(flags);
-
-        Unit* caster = aur->GetUnitCaster();
-        if (caster != nullptr)
-            data << uint8(caster->getLevel());
-        else
-            data << uint8(worldConfig.player.playerLevelCap);
-
-        data << uint8(m_auraStackCount[aur->m_visualSlot]);
-
-        if ((flags & AFLAG_NOT_CASTER) == 0)
-            data << WoWGuid(aur->GetCasterGUID());
-
-        if (flags & AFLAG_DURATION)
-        {
-            data << uint32(aur->GetDuration());
-            data << uint32(aur->GetTimeLeft());
-        }
-    }
-
-    SendMessageToSet(&data, true);
-}
-#endif
 
 void Unit::ModVisualAuraStackCount(Aura* aur, int32 count)
 {
@@ -11992,7 +11877,7 @@ void Unit::SetFacing(float newo)
     data << GetPositionX();
     data << GetPositionY();
     data << GetPositionZ();
-    data <<Util::getMSTime();
+    data << Util::getMSTime();
     data << uint8(4); //set orientation
     data << newo;
     data << uint32(0x1000); //move flags: run
@@ -13238,42 +13123,28 @@ void Unit::TakeDamage(Unit* /*pAttacker*/, uint32 /*damage*/, uint32 /*spellid*/
 void Unit::Die(Unit* /*pAttacker*/, uint32 /*damage*/, uint32 /*spellid*/)
 {}
 
-void Unit::SendPeriodicAuraLog(const WoWGuid & CasterGUID, const WoWGuid & TargetGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, uint32 Flags, bool is_critical)
+void Unit::SendPeriodicAuraLog(const WoWGuid & CasterGUID, const WoWGuid & TargetGUID, uint32 SpellID, uint32 School, uint32 Amount, uint32 abs_dmg, uint32 resisted_damage, bool is_critical, uint32_t mod, int32_t misc, uint32 over_healed)
 {
-    WorldPacket data(SMSG_PERIODICAURALOG, 47);
+    switch (mod)
+    {
+        case SPELL_AURA_PERIODIC_DAMAGE:
+        case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
+            break;
+        case SPELL_AURA_PERIODIC_HEAL:
+        case SPELL_AURA_MOD_TOTAL_HEALTH_REGEN_PCT:
+            break;
+        case SPELL_AURA_MOD_TOTAL_MANA_REGEN_PCT:
+        case SPELL_AURA_PERIODIC_ENERGIZE:
+            break;
+        case SPELL_AURA_PERIODIC_MANA_LEECH:
+            break;
+        default:
+            LogError("SendPeriodicAuraLog: unknown aura type %u", mod);
+            return;
+    }
 
-    data << TargetGUID;             // target guid
-    data << CasterGUID;             // caster guid
-    data << uint32(SpellID);        // spellid
-    data << uint32(1);              // unknown? need research?
-    data << uint32(Flags | 0x1);    // aura school
-    data << uint32(Amount);         // amount of done to target / heal / damage
-    data << uint32(0);              // cebernic: unknown?? needs more research, but it should fix unknown damage type with suffered.
-    data << uint32(g_spellSchoolConversionTable[School]);
-    data << uint32(abs_dmg);
-    data << uint32(resisted_damage);
-    data << uint8(is_critical);
-
-    SendMessageToSet(&data, true);
+    SendMessageToSet(SmsgPeriodicAuraLog(TargetGUID, CasterGUID, SpellID, mod, Amount, over_healed, g_spellSchoolConversionTable[School], abs_dmg, resisted_damage, is_critical, misc, 0).serialise().get(), true);
 }
-
-void Unit::SendPeriodicHealAuraLog(const WoWGuid & CasterGUID, const WoWGuid & TargetGUID, uint32 SpellID, uint32 healed, uint32 over_healed, bool is_critical)
-{
-    WorldPacket data(SMSG_PERIODICAURALOG, 41);
-
-    data << TargetGUID;
-    data << CasterGUID;
-    data << SpellID;
-    data << uint32(1);
-    data << uint32(FLAG_PERIODIC_HEAL);
-    data << uint32(healed);
-    data << uint32(over_healed);
-    data << uint32(0);              // I don't know what it is. maybe something related to absorbed heal?
-    data << uint8(is_critical);
-
-    SendMessageToSet(&data, true);
-}
-
 
 void Unit::Phase(uint8 command, uint32 newphase)
 {

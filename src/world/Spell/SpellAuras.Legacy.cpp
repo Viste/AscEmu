@@ -44,6 +44,14 @@
 #include "Units/Creatures/Pet.h"
 #include "Server/Packets/SmsgUpdateAuraDuration.h"
 #include "Server/Packets/SmsgSetExtraAuraInfo.h"
+#include "Server/Packets/MsgChannelUpdate.h"
+#include "Server/Packets/SmsgSpellOrDamageImmune.h"
+#include "Server/Packets/SmsgPlayerVehicleData.h"
+#include "Server/Packets/SmsgSetForceReactions.h"
+#include "Server/Packets/SmsgControlVehicle.h"
+#include "Server/Packets/SmsgCancelCombat.h"
+
+using namespace AscEmu::Packets;
 
 using AscEmu::World::Spell::Helpers::decimalToMask;
 using AscEmu::World::Spell::Helpers::spellModFlatFloatValue;
@@ -2037,7 +2045,7 @@ void Aura::EventPeriodicDamage(uint32 amount)
                 res = static_cast<float>(dmg.full_damage - dmg.resisted_damage);
         }
 
-        m_target->SendPeriodicAuraLog(m_casterGuid, m_target->GetNewGUID(), GetSpellInfo()->getId(), school, static_cast<int32>(res), abs_dmg, dmg.resisted_damage, FLAG_PERIODIC_DAMAGE, is_critical);
+        m_target->SendPeriodicAuraLog(m_casterGuid, m_target->GetNewGUID(), GetSpellInfo()->getId(), school, static_cast<int32>(res), abs_dmg, dmg.resisted_damage, is_critical, mod->m_type, mod->m_miscValue);
     }
 
     // grep: this is hack.. some auras seem to delete this shit.
@@ -2488,7 +2496,7 @@ void Aura::EventPeriodicHeal(uint32 amount)
     else
         m_target->modHealth(add);
 
-    m_target->SendPeriodicHealAuraLog(m_casterGuid, m_target->GetNewGUID(), GetSpellId(), add, over_heal, is_critical);
+    m_target->SendPeriodicAuraLog(m_casterGuid, m_target->GetNewGUID(), GetSpellId(), 0, add, 0, 0, is_critical, mod->m_type, mod->m_miscValue, over_heal);
 
     m_target->RemoveAurasByHeal();
 
@@ -2784,8 +2792,6 @@ void Aura::SpellAuraModDamageDone(bool apply)
 
     if (m_target->isPlayer())
     {
-        uint16_t index;
-
         if (mod->m_amount > 0)
         {
             if (apply)
@@ -2797,7 +2803,12 @@ void Aura::SpellAuraModDamageDone(bool apply)
             {
                 val = -mod->m_amount;
             }
-            index = PLAYER_FIELD_MOD_DAMAGE_DONE_POS;
+
+            for (uint16_t x = 0; x < 7; ++x)
+            {
+                if (mod->m_miscValue & (((uint32)1) << x))
+                    dynamic_cast<Player*>(m_target)->modModDamageDonePositive(x, val);
+            }
 
         }
         else
@@ -2811,14 +2822,11 @@ void Aura::SpellAuraModDamageDone(bool apply)
             {
                 val = mod->m_amount;
             }
-            index = PLAYER_FIELD_MOD_DAMAGE_DONE_NEG;
-        }
 
-        for (uint16_t x = 0; x < 7; x++)
-        {
-            if (mod->m_miscValue & (((uint32)1) << x))
+            for (uint16_t x = 0; x < 7; ++x)
             {
-                m_target->modInt32Value(index + x, val);
+                if (mod->m_miscValue & (((uint32)1) << x))
+                    dynamic_cast<Player*>(m_target)->modModDamageDoneNegative(x, val);
             }
         }
     }
@@ -2850,12 +2858,10 @@ void Aura::SpellAuraModDamageDone(bool apply)
             }
         }
 
-        for (uint32 x = 0; x < 7; x++)
+        for (uint32 x = 0; x < 7; ++x)
         {
             if (mod->m_miscValue & (((uint32)1) << x))
-            {
                 static_cast< Creature* >(m_target)->ModDamageDone[x] += val;
-            }
         }
     }
 
@@ -3262,7 +3268,7 @@ void Aura::EventPeriodicHealPct(float RegenPct)
     else
         m_target->setHealth(m_target->getMaxHealth());
 
-    m_target->SendPeriodicAuraLog(m_casterGuid, m_target->GetNewGUID(), m_spellInfo->getId(), m_spellInfo->getFirstSchoolFromSchoolMask(), add, 0, 0, FLAG_PERIODIC_HEAL, false);
+    m_target->SendPeriodicAuraLog(m_casterGuid, m_target->GetNewGUID(), m_spellInfo->getId(), m_spellInfo->getFirstSchoolFromSchoolMask(), add, 0, 0, false, mod->m_type, mod->m_miscValue);
 
     if (GetSpellInfo()->getAuraInterruptFlags() & AURA_INTERRUPT_ON_STAND_UP)
     {
@@ -3544,6 +3550,7 @@ void Aura::SpellAuraPeriodicEnergize(bool apply)
 
 void Aura::EventPeriodicEnergize(uint32 amount, uint32 type)
 {
+    // Zyres: type (uint32_t) is always greater/equal 0 (POWER_TYPE_MANA)
     ARCEMU_ASSERT(type >= POWER_TYPE_MANA && type < TOTAL_PLAYER_POWER_TYPES);
 
     Unit* ucaster = GetUnitCaster();
@@ -4604,13 +4611,13 @@ void Aura::SpellAuraTrackCreatures(bool apply)
             if (p_target->TrackingSpell != 0)
                 p_target->RemoveAura(p_target->TrackingSpell);
 
-            p_target->setUInt32Value(PLAYER_TRACK_CREATURES, (uint32)1 << (mod->m_miscValue - 1));
+            p_target->setTrackCreature((uint32)1 << (mod->m_miscValue - 1));
             p_target->TrackingSpell = GetSpellId();
         }
         else
         {
             p_target->TrackingSpell = 0;
-            p_target->setUInt32Value(PLAYER_TRACK_CREATURES, 0);
+            p_target->setTrackCreature(0);
         }
     }
 }
@@ -4624,13 +4631,13 @@ void Aura::SpellAuraTrackResources(bool apply)
             if (p_target->TrackingSpell != 0)
                 p_target->RemoveAura(p_target->TrackingSpell);
 
-            p_target->setUInt32Value(PLAYER_TRACK_RESOURCES, (uint32)1 << (mod->m_miscValue - 1));
+            p_target->setTrackResource((uint32)1 << (mod->m_miscValue - 1));
             p_target->TrackingSpell = GetSpellId();
         }
         else
         {
             p_target->TrackingSpell = 0;
-            p_target->setUInt32Value(PLAYER_TRACK_RESOURCES, 0);
+            p_target->setTrackResource(0);
         }
     }
 }
@@ -4872,8 +4879,8 @@ void Aura::EventPeriodicLeech(uint32 amount)
     else
         m_caster->setHealth(mh);
 
-    m_target->SendPeriodicHealAuraLog(m_caster->GetNewGUID(), m_caster->GetNewGUID(), sp->getId(), heal_amount, 0, false);
-    m_target->SendPeriodicAuraLog(m_target->GetNewGUID(), m_target->GetNewGUID(), sp->getId(), sp->getFirstSchoolFromSchoolMask(), heal_amount, 0, 0, FLAG_PERIODIC_LEECH, is_critical);
+    //m_target->SendPeriodicHealAuraLog(m_caster->GetNewGUID(), m_caster->GetNewGUID(), sp->getId(), heal_amount, 0, false);
+    m_target->SendPeriodicAuraLog(m_target->GetNewGUID(), m_target->GetNewGUID(), sp->getId(), sp->getFirstSchoolFromSchoolMask(), heal_amount, 0, 0, is_critical, mod->m_type, mod->m_miscValue);
 
     //deal damage before we add healing bonus to damage
     m_caster->DealDamage(m_target, dmg_amount, 0, 0, sp->getId(), true);
@@ -4894,12 +4901,7 @@ void Aura::EventPeriodicLeech(uint32 amount)
 
 void Aura::SendTickImmune(Unit* target, Unit* caster)
 {
-    WorldPacket data(SMSG_SPELLORDAMAGE_IMMUNE, 21);
-    data << (caster ? caster->getGuid() : target->getGuid());
-    data << target->getGuid();
-    data << GetSpellInfo()->getId();
-    data << uint8(1);
-    target->SendMessageToSet(&data, true);
+    target->SendMessageToSet(SmsgSpellOrDamageImmune(caster ? caster->getGuid() : target->getGuid(), target->getGuid(), GetSpellInfo()->getId()).serialise().get(), true);
 }
 
 void Aura::SpellAuraModHitChance(bool apply)
@@ -5329,7 +5331,7 @@ void Aura::EventPeriodicHealthFunnel(uint32 amount)
         else
             m_caster->setHealth(mh);
 
-        m_target->SendPeriodicAuraLog(m_target->GetNewGUID(), m_target->GetNewGUID(), m_spellInfo->getId(), m_spellInfo->getFirstSchoolFromSchoolMask(), 1000, 0, 0, FLAG_PERIODIC_LEECH, false);
+        m_target->SendPeriodicAuraLog(m_target->GetNewGUID(), m_target->GetNewGUID(), m_spellInfo->getId(), m_spellInfo->getFirstSchoolFromSchoolMask(), 1000, 0, 0, false, mod->m_type, mod->m_miscValue);
 
         m_caster->RemoveAurasByHeal();
     }
@@ -5413,8 +5415,6 @@ void Aura::SpellAuraFeignDeath(bool apply)
 {
     if (p_target != nullptr)
     {
-        WorldPacket data(50);
-
         if (apply)
         {
             p_target->EventAttackStop();
@@ -5447,8 +5447,6 @@ void Aura::SpellAuraFeignDeath(bool apply)
                         Player* plr = static_cast<Player*>(itr);
                         if (plr->isCastingSpell())
                             plr->interruptSpell(); // cancel current casting spell
-
-                        plr->GetSession()->SendPacket(&data);
                     }
                 }
             }
@@ -5456,17 +5454,12 @@ void Aura::SpellAuraFeignDeath(bool apply)
             // this looks awkward!
             p_target->SendMirrorTimer(MIRROR_TYPE_FIRE, GetDuration(), GetDuration(), 0xFFFFFFFF);
 
-            p_target->GetSession()->SendPacket(&data);
-
-            data.Initialize(SMSG_CLEAR_TARGET);
-            data << p_target->getGuid();
-
             p_target->removeUnitFlags(UNIT_FLAG_COMBAT);
 
             if (p_target->hasUnitStateFlag(UNIT_STATE_ATTACKING))
                 p_target->removeUnitStateFlag(UNIT_STATE_ATTACKING);
 
-            p_target->GetSession()->OutPacket(SMSG_CANCEL_COMBAT);
+            p_target->SendPacket(SmsgCancelCombat().serialise().get());
             p_target->GetSession()->OutPacket(SMSG_CANCEL_AUTO_REPEAT);
         }
         else
@@ -5483,22 +5476,28 @@ void Aura::SpellAuraFeignDeath(bool apply)
 
 void Aura::SpellAuraModDisarm(bool apply)
 {
+    enum AuraModUnitFlag
+    {
+        UnitFlag,
+        UnitFlag2
+    };
+
     uint32_t flag;
     uint16_t field;
 
     switch (mod->m_type)
     {
         case SPELL_AURA_MOD_DISARM:
-            field = UNIT_FIELD_FLAGS;
+            field = UnitFlag;
             flag = UNIT_FLAG_DISARMED;
             break;
-#if VERSION_STRING != Classic
+#if VERSION_STRING > Classic
         case SPELL_AURA_MOD_DISARM_OFFHAND:
-            field = UNIT_FIELD_FLAGS_2;
+            field = UnitFlag2;
             flag = UNIT_FLAG2_DISARM_OFFHAND;
             break;
         case SPELL_AURA_MOD_DISARM_RANGED:
-            field = UNIT_FIELD_FLAGS_2;
+            field = UnitFlag2;
             flag = UNIT_FLAG2_DISARM_RANGED;
             break;
 #endif
@@ -5515,13 +5514,25 @@ void Aura::SpellAuraModDisarm(bool apply)
 
         m_target->disarmed = true;
         m_target->addUnitStateFlag(UNIT_STATE_DISARMED);
-        m_target->SetFlag(field, flag);
+
+        if (field == UnitFlag)
+            m_target->addUnitFlags(flag);
+#if VERSION_STRING > Classic
+        else
+            m_target->addUnitFlags2(flag);
+#endif
     }
     else
     {
         m_target->disarmed = false;
         m_target->removeUnitStateFlag(UNIT_STATE_DISARMED);
-        m_target->RemoveFlag(field, flag);
+
+        if (field == UnitFlag)
+            m_target->removeUnitFlags(flag);
+#if VERSION_STRING > Classic
+        else
+            m_target->removeUnitFlags2(flag);
+#endif
     }
 }
 
@@ -5770,13 +5781,9 @@ void Aura::SpellAuraMounted(bool apply)
             p_target->addVehicleComponent(ci->Id, ci->vehicleid);
 
 #if VERSION_STRING > TBC
-            WorldPacket data(SMSG_PLAYER_VEHICLE_DATA, 12);
-            data << p_target->GetNewGUID();
-            data << uint32(p_target->mountvehicleid);
-            p_target->SendMessageToSet(&data, true);
+            p_target->SendMessageToSet(SmsgPlayerVehicleData(p_target->GetNewGUID(), p_target->mountvehicleid).serialise().get(), true);
 
-            data.Initialize(SMSG_CONTROL_VEHICLE);
-            p_target->SendPacket(&data);
+            p_target->SendPacket(SmsgControlVehicle().serialise().get());
 #endif
 
             p_target->addUnitFlags(UNIT_FLAG_MOUNT);
@@ -5797,10 +5804,7 @@ void Aura::SpellAuraMounted(bool apply)
             p_target->getVehicleComponent()->EjectAllPassengers();
 
 #if VERSION_STRING > TBC
-            WorldPacket data(SMSG_PLAYER_VEHICLE_DATA, 12);
-            data << p_target->GetNewGUID();
-            data << uint32(0);
-            p_target->SendMessageToSet(&data, true);
+            p_target->SendMessageToSet(SmsgPlayerVehicleData(p_target->GetNewGUID(), 0).serialise().get(), true);
 #endif
 
             p_target->removeVehicleComponent();
@@ -6030,6 +6034,7 @@ void Aura::EventPeriodicTrigger(uint32 /*amount*/, uint32 /*type*/)
 
 void Aura::EventPeriodicEnergizeVariable(uint32 amount, uint32 type)
 {
+    // Zyres: type (uint32_t) is always greater/equal 0 (POWER_TYPE_MANA)
     ARCEMU_ASSERT(type >= POWER_TYPE_MANA && type < TOTAL_PLAYER_POWER_TYPES);
 
     Unit* ucaster = GetUnitCaster();
@@ -6068,7 +6073,7 @@ void Aura::EventPeriodicHeal1(uint32 amount)
     else
     {
         if (!(m_spellInfo->custom_BGR_one_buff_on_target & SPELL_TYPE_ARMOR))
-            m_target->SendPeriodicHealAuraLog(m_casterGuid, m_target->GetNewGUID(), GetSpellId(), amount, 0, false);
+            m_target->SendPeriodicAuraLog(m_casterGuid, m_target->GetNewGUID(), GetSpellId(), 0, amount, 0, 0, false, mod->m_type, mod->m_miscValue);
     }
 
     m_target->RemoveAurasByHeal();
@@ -6462,7 +6467,6 @@ void Aura::SpellAuraWaterWalk(bool apply)
 {
     if (p_target != nullptr)
     {
-        WorldPacket data(12);
         if (apply)
         {
             SetPositive();
@@ -7079,7 +7083,7 @@ void Aura::SpellAuraModIncreaseEnergyPerc(bool apply)
     auto modValue = static_cast<PowerType>(mod->m_miscValue);
     if (apply)
     {
-        mod->fixed_amount[mod->m_effectIndex] = m_target->getPercentModUInt32Value(UNIT_FIELD_MAXPOWER1 + modValue, mod->m_amount);
+        mod->fixed_amount[mod->m_effectIndex] = (m_target->getMaxPower(modValue) * mod->m_amount) / 100;
         m_target->modMaxPower(modValue, mod->fixed_amount[mod->m_effectIndex]);
         if (p_target != nullptr && mod->m_miscValue == POWER_TYPE_MANA)
             p_target->SetManaFromSpell(p_target->GetManaFromSpell() + mod->fixed_amount[mod->m_effectIndex]);
@@ -7097,7 +7101,7 @@ void Aura::SpellAuraModIncreaseHealthPerc(bool apply)
     SetPositive();
     if (apply)
     {
-        mod->fixed_amount[mod->m_effectIndex] = m_target->getPercentModUInt32Value(UNIT_FIELD_MAXHEALTH, mod->m_amount);
+        mod->fixed_amount[mod->m_effectIndex] = (m_target->getMaxHealth() * mod->m_amount) / 100;
         m_target->modMaxHealth(mod->fixed_amount[mod->m_effectIndex]);
         if (p_target != nullptr)
             p_target->SetHealthFromSpell(p_target->GetHealthFromSpell() + mod->fixed_amount[mod->m_effectIndex]);
@@ -7263,13 +7267,12 @@ void Aura::SpellAuraModHaste(bool apply)
 
 void Aura::SpellAuraForceReaction(bool apply)
 {
-    std::map<uint32, uint32>::iterator itr;
     if (p_target == nullptr)
         return;
 
     if (apply)
     {
-        itr = p_target->m_forcedReactions.find(mod->m_miscValue);
+        std::map<uint32, uint32>::iterator itr = p_target->m_forcedReactions.find(mod->m_miscValue);
         if (itr != p_target->m_forcedReactions.end())
             itr->second = mod->m_amount;
         else
@@ -7278,15 +7281,7 @@ void Aura::SpellAuraForceReaction(bool apply)
     else
         p_target->m_forcedReactions.erase(mod->m_miscValue);
 
-    WorldPacket data(SMSG_SET_FORCED_REACTIONS, (8 * p_target->m_forcedReactions.size()) + 4);
-    data << uint32(p_target->m_forcedReactions.size());
-    for (itr = p_target->m_forcedReactions.begin(); itr != p_target->m_forcedReactions.end(); ++itr)
-    {
-        data << itr->first;
-        data << itr->second;
-    }
-
-    p_target->GetSession()->SendPacket(&data);
+    p_target->GetSession()->SendPacket(SmsgSetForceReactions(p_target->m_forcedReactions).serialise().get());
 }
 
 void Aura::SpellAuraModRangedHaste(bool apply)
@@ -7535,7 +7530,7 @@ void Aura::EventPeriodicBurn(uint32 amount, uint32 misc)
         uint32 Amount = (uint32)std::min(amount, m_target->getPower(static_cast<PowerType>(misc)));
         uint32 newHealth = m_target->getPower(static_cast<PowerType>(misc)) - Amount;
 
-        m_target->SendPeriodicAuraLog(m_target->GetNewGUID(), m_target->GetNewGUID(), m_spellInfo->getId(), m_spellInfo->getFirstSchoolFromSchoolMask(), newHealth, 0, 0, FLAG_PERIODIC_DAMAGE, false);
+        m_target->SendPeriodicAuraLog(m_target->GetNewGUID(), m_target->GetNewGUID(), m_spellInfo->getId(), m_spellInfo->getFirstSchoolFromSchoolMask(), newHealth, 0, 0, false, mod->m_type, mod->m_miscValue);
         m_caster->DealDamage(m_target, Amount, 0, 0, GetSpellInfo()->getId());
     }
 }
@@ -8110,7 +8105,7 @@ void Aura::SpellAuraEmphaty(bool apply)
     if (apply)
         dynflags |= U_DYN_FLAG_PLAYER_INFO;
 
-    m_target->BuildFieldUpdatePacket(caster, UNIT_DYNAMIC_FLAGS, dynflags);
+    m_target->BuildFieldUpdatePacket(caster, getOffsetForStructuredField(WoWUnit, dynamic_flags), dynflags);
 }
 
 void Aura::SpellAuraModOffhandDamagePCT(bool apply)
@@ -8793,35 +8788,9 @@ void Aura::SpellAuraModBlockValue(bool apply)
     }
 }
 
-void Aura::SendInterrupted(uint8 result, Object* m_caster)
-{
-    if (!m_caster->IsInWorld())
-        return;
-
-    WorldPacket data(SMSG_SPELL_FAILURE, 20);
-    if (m_caster->isPlayer())
-    {
-        data << m_caster->GetNewGUID();
-        data << m_spellInfo->getId();
-        data << uint8(result);
-        static_cast< Player* >(m_caster)->GetSession()->SendPacket(&data);
-    }
-
-    data.Initialize(SMSG_SPELL_FAILED_OTHER);
-    data << m_caster->GetNewGUID();
-    data << m_spellInfo->getId();
-    m_caster->SendMessageToSet(&data, false);
-
-    m_interrupted = (int16)result;
-}
-
 void Aura::SendChannelUpdate(uint32 time, Object* m_caster)
 {
-    WorldPacket data(MSG_CHANNEL_UPDATE, 18);
-    data << m_caster->GetNewGUID();
-    data << time;
-
-    m_caster->SendMessageToSet(&data, true);
+    m_caster->SendMessageToSet(MsgChannelUpdate(m_caster->GetNewGUID(), time).serialise().get(), true);
 }
 
 void Aura::SpellAuraExpertise(bool /*apply*/)

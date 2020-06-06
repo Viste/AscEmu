@@ -22,6 +22,7 @@
 #define CONTAINER_H
 
 #include "Management/Item.h"
+#include "Data/WoWContainer.h"
 
 struct WoWContainer;
 class SERVER_DECL Container : public Item
@@ -66,7 +67,7 @@ public:
 protected:
 
         Item** m_Slot;
-        uint32 __fields[CONTAINER_END];
+        uint32 __fields[getSizeOfStructure(WoWContainer)];
 };
 
 #endif // CONTAINER_H

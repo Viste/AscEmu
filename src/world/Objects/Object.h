@@ -43,6 +43,7 @@
 #include "../shared/CommonDefines.hpp"
 #include "WorldPacket.h"
 #include "Units/Creatures/CreatureDefines.hpp"
+#include "Data/WoWObject.h"
 
 #if VERSION_STRING < Cata
 #include "Data/MovementInfo.h"
@@ -263,9 +264,7 @@ protected:
     {
         uint8_t* wow_data_ptr;
         WoWObject* wow_data;
-        int32_t* m_int32Values;
         uint32_t* m_uint32Values;
-        float* m_floatValues;
     };
 
     bool skipping_updates = false;
@@ -297,47 +296,21 @@ public:
     void setGuidHigh(uint32_t high);
 
     //\todo choose one function!
+#if VERSION_STRING < Cata
     uint32_t getOType() const;
     void setOType(uint32_t type);
     void setObjectType(uint8_t objectTypeId);
+#else
+    uint16_t getOType() const;
+    void setOType(uint16_t type);
+    void setObjectType(uint8_t objectTypeId);
+#endif
 
     void setEntry(uint32_t entry);
     uint32_t getEntry() const;
 
     float getScale() const;
     void setScale(float scaleX);
-
-    // old update data handling
-    void setByteValue(uint16_t index, uint8_t offset, uint8_t value);
-    uint8_t getByteValue(uint16_t index, uint8_t offset) const;
-
-    void setByteFlag(uint16_t index, uint8_t offset, uint8_t newFlag);
-    void removeByteFlag(uint16_t index, uint8_t offset, uint8_t oldFlag);
-
-    bool hasByteFlag(uint16_t index, uint8_t offset, uint8_t flag);
-
-    void setUInt16Value(uint16_t index, uint8_t offset, uint16_t value);
-    uint16_t getUInt16Value(uint16_t index, uint8_t offset) const;
-
-    void setUInt32Value(uint16_t index, uint32_t value);
-    uint32_t getUInt32Value(uint16_t index) const;
-    void modUInt32Value(uint16_t index, int32_t mod);
-
-    uint32_t getPercentModUInt32Value(uint16_t index, const int32_t value);
-
-    void setInt32Value(uint16_t index, int32_t value);
-    uint32_t getInt32Value(uint16_t index) const;
-    void modInt32Value(uint16_t index, int32_t value);
-
-    void setUInt64Value(uint16_t index, uint64_t value);
-    uint64_t getUInt64Value(uint16_t index) const;
-
-    void setFloatValue(uint16_t index, float value);
-    float getFloatValue(uint16_t index) const;
-
-    void modFloatValue(uint16_t index, float value);
-    void modFloatValueByPCT(uint16_t index, int32 byPct);
-
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // Object update
@@ -489,8 +462,8 @@ public:
 
         const WoWGuid & GetNewGUID() const { return m_wowGuid; }
 
-    uint32 GetTypeFromGUID() const { return (m_uint32Values[OBJECT_FIELD_GUID + 1] & HIGHGUID_TYPE_MASK); }
-    uint32 GetUIdFromGUID() const { return (m_uint32Values[OBJECT_FIELD_GUID] & LOWGUID_ENTRY_MASK); }
+    uint32 GetTypeFromGUID() const { return (getGuidHigh() & HIGHGUID_TYPE_MASK); }
+    uint32 GetUIdFromGUID() const { return (getGuidLow() & LOWGUID_ENTRY_MASK); }
 
         // typeFlags
         bool IsType(TYPE type_mask) const { return (type_mask & m_objectType) != 0; }
@@ -588,26 +561,6 @@ public:
             m_wowGuid.Init(getGuid());
         }
 
-        void EventSetUInt32Value(uint16 index, uint32 value);
-
-        void SetFlag(const uint16 index, uint32 newFlag);
-
-        void RemoveFlag(const uint16 index, uint32 oldFlag);
-
-        bool HasFlag(const uint16 index, uint32 flag) const
-        {
-            ARCEMU_ASSERT(index < m_valuesCount);
-            return (m_uint32Values[index] & flag) != 0;
-        }
-
-        void ApplyModFlag(uint16 index, uint32 flag, bool apply)
-        {
-            if (apply)
-                SetFlag(index, flag);
-            else
-                RemoveFlag(index, flag);
-        }
-
         ////////////////////////////////////////
         void ClearUpdateMask()
         {
@@ -617,7 +570,7 @@ public:
 
         bool HasUpdateField(uint32 index)
         {
-            ARCEMU_ASSERT(index < m_valuesCount);
+            ARCEMU_ASSERT(index < m_valuesCount)
             return m_updateMask.GetBit(index);
         }
 
@@ -712,9 +665,6 @@ public:
         //
         //////////////////////////////////////////////////////////////////////////////////////////
         void SendDestroyObject();
-
-        // Fill values with data from a space separated string of uint32s.
-        void LoadValues(const char* data);
 
         uint16 GetValuesCount() const { return m_valuesCount; }
 

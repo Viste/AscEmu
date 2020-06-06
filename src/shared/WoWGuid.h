@@ -88,13 +88,13 @@ struct ObjectGuid
 
         uint8_t& operator[](uint32_t index)
         {
-            ASSERT(index < sizeof(uint64_t));
+            ASSERT(index < sizeof(uint64_t))
             return _data.byte[index];
         }
 
         uint8_t const& operator[](uint32_t index) const
         {
-            ASSERT(index < sizeof(uint64_t));
+            ASSERT(index < sizeof(uint64_t))
             return _data.byte[index];
         }
 
@@ -131,24 +131,19 @@ class SERVER_DECL WoWGuid
 {
     public:
 
-        WoWGuid()
-        {
-            Clear();
-        }
+        WoWGuid() { Clear(); }
+        WoWGuid(uint64_t guid) { Init(guid); }
+        WoWGuid(WoWGuid const& guid) { Init(guid); }
 
-        WoWGuid(uint64_t guid)
+        WoWGuid(uint32_t id, uint32_t entry, uint32_t highType)
         {
-            Init(static_cast<uint64_t>(guid));
-        }
+            uint64_t rawGuid;
 
-        WoWGuid(uint8_t mask)
-        {
-            Init(static_cast<uint8_t>(mask));
-        }
+            rawGuid = uint64_t(highType) << 32;
+            rawGuid = rawGuid | uint64_t(entry) << 24;
+            rawGuid = rawGuid | id;
 
-        WoWGuid(uint8_t mask, uint8_t* fields)
-        {
-            Init(mask, fields);
+            Init(rawGuid);
         }
 
         ~WoWGuid()
@@ -176,31 +171,13 @@ class SERVER_DECL WoWGuid
             _CompileByOld();
         }
 
-        void Init(uint8_t mask)
+        void Init(WoWGuid guid)
         {
             Clear();
 
-            guidmask = mask;
+            m_rawGuid = guid.m_rawGuid;
 
-            if(!guidmask)
-                _CompileByNew();
-        }
-
-        void Init(uint8_t mask, const uint8_t* fields)
-        {
-            Clear();
-
-            guidmask = mask;
-
-            if (!BitCount8(guidmask))
-                return;
-
-            for (int i = 0; i < BitCount8(guidmask); i++)
-                m_guidfields[i] = (fields[i]);
-
-            m_fieldcount = BitCount8(guidmask);
-
-            _CompileByNew();
+            _CompileByOld();
         }
 
         uint32_t getGuidLow() const { return static_cast<uint32_t>(m_rawGuid); }
@@ -231,17 +208,6 @@ class SERVER_DECL WoWGuid
 
         HighGuid getHigh() const { return static_cast<HighGuid>(getGuidHighPart()); }
 
-        static uint64_t createPetGuid(uint32_t entry, uint32_t lowGuid)
-        {
-            uint64_t rawGuid = 0;
-
-            rawGuid = uint64_t(HIGHGUID_TYPE_PET) << 32;
-            rawGuid = rawGuid | uint64_t(entry) << 24;
-            rawGuid = rawGuid | lowGuid;
-
-            return rawGuid;
-        }
-
         static uint64_t createItemGuid(uint32_t lowguid)
         {
             uint64_t rawGuid = 0;
@@ -254,7 +220,9 @@ class SERVER_DECL WoWGuid
             return rawGuid;
         }
 
-        uint64_t GetOldGuid() const { return m_rawGuid; }
+        uint64_t getRawGuid() const { return m_rawGuid; }
+
+
         const uint8_t* GetNewGuid() const { return m_guidfields; }
         uint8_t GetNewGuidLen() const { return BitCount8(guidmask); }
         uint8_t GetNewGuidMask() const { return guidmask; }
@@ -264,6 +232,19 @@ class SERVER_DECL WoWGuid
         bool operator !=(uint64_t someval) const { return (m_rawGuid != someval); }
         uint64_t operator &(uint64_t someval) const { return (m_rawGuid & someval); }
         uint64_t operator &(unsigned int someval) const { return (m_rawGuid & someval); }
+
+        uint8_t& operator[](uint32_t index)
+        {
+            ASSERT(index < sizeof(uint64_t))
+            return m_guidfields[index];
+        }
+
+        uint8_t const& operator[](uint32_t index) const
+        {
+            ASSERT(index < sizeof(uint64_t))
+            return m_guidfields[index];
+        }
+
         operator bool() { return (m_rawGuid > 0); }
         operator uint64_t() { return m_rawGuid; }
         void operator =(uint64_t someval) { Clear(); Init(static_cast<uint64_t>(someval)); }
@@ -288,8 +269,8 @@ class SERVER_DECL WoWGuid
 
         void AppendField(uint8_t field)
         {
-            ASSERT(!m_compiled);
-            ASSERT(m_fieldcount < BitCount8(guidmask));
+            ASSERT(!m_compiled)
+            ASSERT(m_fieldcount < BitCount8(guidmask))
 
             m_guidfields[m_fieldcount++] = field;
 
@@ -309,7 +290,7 @@ class SERVER_DECL WoWGuid
 
         void _CompileByOld()
         {
-            ASSERT(!m_compiled);
+            ASSERT(!m_compiled)
 
             m_fieldcount = 0;
 
@@ -330,7 +311,7 @@ class SERVER_DECL WoWGuid
 
         void _CompileByNew()
         {
-            ASSERT(!m_compiled || m_fieldcount == BitCount8(guidmask));
+            ASSERT(!m_compiled || m_fieldcount == BitCount8(guidmask))
 
             int j = 0;
 

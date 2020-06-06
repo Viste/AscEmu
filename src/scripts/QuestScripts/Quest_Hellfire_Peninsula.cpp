@@ -25,7 +25,7 @@
 // Fel Orc Scavengers
 class FelOrcScavengersQAI : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(FelOrcScavengersQAI);
+    ADD_CREATURE_FACTORY_FUNCTION(FelOrcScavengersQAI)
     explicit FelOrcScavengersQAI(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
     void OnDied(Unit* mKiller)
@@ -39,7 +39,7 @@ class FelOrcScavengersQAI : public CreatureAIScript
 
 class Dreadtusk : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(Dreadtusk);
+    ADD_CREATURE_FACTORY_FUNCTION(Dreadtusk)
     explicit Dreadtusk(Creature* pCreature) : CreatureAIScript(pCreature) { }
     void OnDied(Unit* mKiller)
     {
@@ -73,7 +73,7 @@ public:
             }
 
             // Northern Zeth'Gor Tower
-            if (pQuest->GetMobCount(0) < pQuest->GetQuest()->required_mob_or_go_count[0])
+            if (pQuest->getMobCountByIndex(0) < pQuest->getQuestProperties()->required_mob_or_go_count[0])
             {
                 GameObject* pNorthern = pPlayer->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-820.0f, 2029.0f, 55.0f, 300150);
                 if (pNorthern != nullptr && pPlayer->CalcDistance(pPlayer, pNorthern) < 40)      // if reduced the server will crash when out of range
@@ -89,7 +89,7 @@ public:
             }
 
             // Southern Zeth'Gor Tower
-            if (pQuest->GetMobCount(1) < pQuest->GetQuest()->required_mob_or_go_count[1])
+            if (pQuest->getMobCountByIndex(1) < pQuest->getQuestProperties()->required_mob_or_go_count[1])
             {
                 GameObject* pSouthern = pPlayer->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-1150.0f, 2110.0f, 84.0f, 300150);
                 if (pSouthern != NULL && pPlayer->CalcDistance(pPlayer, pSouthern) < 40)
@@ -105,7 +105,7 @@ public:
             }
 
             // Forge Zeth'Gor Tower
-            if (pQuest->GetMobCount(2) < pQuest->GetQuest()->required_mob_or_go_count[2])
+            if (pQuest->getMobCountByIndex(2) < pQuest->getQuestProperties()->required_mob_or_go_count[2])
             {
                 GameObject* pForge = pPlayer->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-893.0f, 1919.0f, 82.0f, 300150);
                 if (pForge != NULL && pPlayer->CalcDistance(pPlayer, pForge) < 40)
@@ -121,7 +121,7 @@ public:
             }
 
             // Foothill Zeth'Gor Tower
-            if (pQuest->GetMobCount(3) < pQuest->GetQuest()->required_mob_or_go_count[3])
+            if (pQuest->getMobCountByIndex(3) < pQuest->getQuestProperties()->required_mob_or_go_count[3])
             {
                 GameObject* pFoothill = pPlayer->GetMapMgr()->GetInterface()->GetGameObjectNearestCoords(-978.0f, 1879.0f, 111.0f, 300150);
                 if (pFoothill != NULL && pPlayer->CalcDistance(pPlayer, pFoothill) < 40)
@@ -155,7 +155,7 @@ public:
 
     void onHello(Object* pObject, Player* pPlayer) override
     {
-        int32 i = -1;
+        int32_t i = -1;
         Creature* pPrisoner = static_cast<Creature*>(pObject);
         switch (pPrisoner->getEntry())
         {
@@ -174,7 +174,7 @@ public:
             return;
 
         QuestLogEntry* pQuest = pPlayer->GetQuestLogForEntry(10368);
-        if (pQuest != nullptr && pQuest->GetMobCount(i) < pQuest->GetQuest()->required_mob_or_go_count[i])
+        if (pQuest != nullptr && pQuest->getMobCountByIndex(i) < pQuest->getQuestProperties()->required_mob_or_go_count[i])
         {
             if (pPlayer->getItemInterface()->GetItemCount(29501) > 0)
             {
@@ -185,10 +185,10 @@ public:
         }
     }
 
-    void onSelectOption(Object* pObject, Player* pPlayer, uint32 /*Id*/, const char* /*EnteredCode*/, uint32 /*gossipId*/) override
+    void onSelectOption(Object* pObject, Player* pPlayer, uint32_t /*Id*/, const char* /*EnteredCode*/, uint32_t /*gossipId*/) override
     {
 
-        uint8 i = 66;
+        uint8_t i = 66;
         Creature* pPrisoner = static_cast<Creature*>(pObject);
         switch (pPrisoner->getEntry())
         {
@@ -217,7 +217,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////
 class PrisonersDreghoodElders : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(PrisonersDreghoodElders);
+    ADD_CREATURE_FACTORY_FUNCTION(PrisonersDreghoodElders)
     explicit PrisonersDreghoodElders(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
     void OnLoad() override
@@ -231,7 +231,7 @@ class PrisonersDreghoodElders : public CreatureAIScript
 //////////////////////////////////////////////////////////////////////////////////////////
 class AncestralSpiritWolf : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(AncestralSpiritWolf);
+    ADD_CREATURE_FACTORY_FUNCTION(AncestralSpiritWolf)
     explicit AncestralSpiritWolf(Creature* pCreature) : CreatureAIScript(pCreature) {}
     void OnLoad() override
     {
@@ -241,7 +241,7 @@ class AncestralSpiritWolf : public CreatureAIScript
 
 class HellfireDeadNPC : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(HellfireDeadNPC);
+    ADD_CREATURE_FACTORY_FUNCTION(HellfireDeadNPC)
     explicit HellfireDeadNPC(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
     void OnLoad() override

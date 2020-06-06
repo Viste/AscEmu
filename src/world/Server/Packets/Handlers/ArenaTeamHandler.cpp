@@ -17,6 +17,8 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Server/Packets/CmsgArenaTeamRoster.h"
 #include "Server/Packets/SmsgArenaTeamStats.h"
 #include "Server/Packets/SmsgArenaTeamQueryResponse.h"
+#include "Server/Packets/SmsgArenaTeamInvite.h"
+#include "Server/Packets/SmsgArenaTeamRooster.h"
 
 using namespace AscEmu::Packets;
 
@@ -47,7 +49,7 @@ void WorldSession::handleArenaTeamAddMemberOpcode(WorldPacket& recvPacket)
     if (arenaTeam == nullptr)
         return;
 
-    if (!arenaTeam->HasMember(GetPlayer()->getGuidLow()))
+    if (!arenaTeam->isMember(GetPlayer()->getGuidLow()))
     {
         GetPlayer()->SoftDisconnect();
         return;
@@ -92,10 +94,7 @@ void WorldSession::handleArenaTeamAddMemberOpcode(WorldPacket& recvPacket)
 
     player->m_arenateaminviteguid = _player->m_arenaTeams[arenaTeam->m_type]->m_id;
 
-    WorldPacket data(SMSG_ARENA_TEAM_INVITE, 40);
-    data << _player->getName().c_str();
-    data << _player->m_arenaTeams[arenaTeam->m_type]->m_name;
-    player->GetSession()->SendPacket(&data);
+    player->SendPacket(SmsgArenaTeamInvite(_player->getName(), _player->m_arenaTeams[arenaTeam->m_type]->m_name).serialise().get());
 }
 
 void WorldSession::handleArenaTeamRemoveMemberOpcode(WorldPacket& recvPacket)
@@ -134,7 +133,7 @@ void WorldSession::handleArenaTeamRemoveMemberOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (!arenaTeam->HasMember(playerInfo->guid))
+    if (!arenaTeam->isMember(playerInfo->guid))
     {
         SystemMessage("That player is not in your arena team.");
         return;
@@ -325,7 +324,7 @@ void WorldSession::handleArenaTeamPromoteOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (!arenaTeam->HasMember(playerInfo->guid))
+    if (!arenaTeam->isMember(playerInfo->guid))
     {
         SystemMessage("That player is not a member of your arena team.");
         return;
@@ -342,9 +341,8 @@ void WorldSession::handleArenaTeamRosterOpcode(WorldPacket& recvPacket)
 
     if (auto arenaTeam = sObjectMgr.GetArenaTeamById(srlPacket.teamId))
     {
-        WorldPacket data(1000);
-        arenaTeam->Roster(data);
-        SendPacket(&data);
+        const auto memberList = arenaTeam->getRoosterMembers();
+        SendPacket(SmsgArenaTeamRooster(arenaTeam->m_id, memberList.size(), arenaTeam->GetPlayersPerTeam(), memberList).serialise().get());
     }
 }
 
@@ -364,9 +362,9 @@ void WorldSession::handleInspectArenaStatsOpcode(WorldPacket& recvPacket)
     std::vector<ArenaTeamsList> arenaTeamList;
     ArenaTeamsList tempList{};
 
-    for (uint8_t offset = 0; offset < 3; ++offset)
+    for (uint8_t offset = 0; offset < NUM_ARENA_TEAM_TYPES; ++offset)
     {
-        const uint32_t teamId = player->getUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (offset * 7));
+        const uint32_t teamId = player->getArenaTeamId(offset);
         if (teamId > 0)
         {
             const auto arenaTeam = sObjectMgr.GetArenaTeamById(teamId);

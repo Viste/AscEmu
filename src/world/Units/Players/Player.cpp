@@ -48,6 +48,7 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Server/Packets/SmsgNewWorld.h"
 #include "Server/Packets/SmsgPvpCredit.h"
 #include "Server/Packets/SmsgRaidGroupOnly.h"
+#include "Server/Packets/SmsgAuctionCommandResult.h"
 #include "Server/World.h"
 #include "Spell/Definitions/AuraInterruptFlags.h"
 #include "Spell/Definitions/PowerType.h"
@@ -62,6 +63,9 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Storage/MySQLDataStore.hpp"
 #include "Units/Creatures/Pet.h"
 #include "Units/UnitDefines.hpp"
+#include "Server/Packets/SmsgTriggerMovie.h"
+#include "Server/Packets/SmsgTriggerCinematic.h"
+#include "Server/Packets/SmsgSpellCooldown.h"
 
 using namespace AscEmu::Packets;
 
@@ -276,10 +280,14 @@ void Player::setGuildId(uint32_t guildId)
 #if VERSION_STRING < Cata
     write(playerData()->guild_id, guildId);
 #else
-    write(objectData()->data, MAKE_NEW_GUID(guildId, 0, HIGHGUID_TYPE_GUILD));
+    write(objectData()->data, WoWGuid(guildId, 0, HIGHGUID_TYPE_GUILD).getRawGuid());
 
-    ApplyModFlag(PLAYER_FLAGS, PLAYER_FLAGS_GUILD_LVL_ENABLED, guildId != 0);
-    setUInt16Value(OBJECT_FIELD_TYPE, 1, guildId != 0);
+    if (guildId)
+        addPlayerFlags(PLAYER_FLAGS_GUILD_LVL_ENABLED);
+    else
+        removePlayerFlags(PLAYER_FLAGS_GUILD_LVL_ENABLED);
+
+    write(objectData()->parts.guild_id, static_cast<uint16_t>(guildId != 0 ? 1 : 0));
 #endif
 }
 
@@ -315,7 +323,8 @@ void Player::setPlayerBytes2(uint32_t bytes2) { write(playerData()->player_bytes
 uint8_t Player::getFacialFeatures() const { return playerData()->player_bytes_2.s.facial_hair; }
 void Player::setFacialFeatures(uint8_t feature) { write(playerData()->player_bytes_2.s.facial_hair, feature); }
 
-//unk1
+uint8_t Player::getBytes2UnknownField() const { return playerData()->player_bytes_2.s.unk1; }
+void Player::setBytes2UnknownField(uint8_t value) { write(playerData()->player_bytes_2.s.unk1, value); }
 
 uint8_t Player::getBankSlots() const { return playerData()->player_bytes_2.s.bank_slots; }
 void Player::setBankSlots(uint8_t slots) { write(playerData()->player_bytes_2.s.bank_slots, slots); }
@@ -331,11 +340,14 @@ void Player::setPlayerBytes3(uint32_t bytes3) { write(playerData()->player_bytes
 uint8_t Player::getPlayerGender() const { return playerData()->player_bytes_3.s.gender; }
 void Player::setPlayerGender(uint8_t gender) { write(playerData()->player_bytes_3.s.gender, gender); }
 
-uint16_t Player::getDrunkValue() const { return playerData()->player_bytes_3.s.drunk_value; }
-void Player::setDrunkValue(uint16_t value) { write(playerData()->player_bytes_3.s.drunk_value, value); }
+uint8_t Player::getDrunkValue() const { return playerData()->player_bytes_3.s.drunk_value; }
+void Player::setDrunkValue(uint8_t value) { write(playerData()->player_bytes_3.s.drunk_value, value); }
 
 uint8_t Player::getPvpRank() const { return playerData()->player_bytes_3.s.pvp_rank; }
 void Player::setPvpRank(uint8_t rank) { write(playerData()->player_bytes_3.s.pvp_rank, rank); }
+
+uint8_t Player::getArenaFaction() const { return playerData()->player_bytes_3.s.arena_faction; }
+void Player::setArenaFaction(uint8_t faction) { write(playerData()->player_bytes_3.s.arena_faction, faction); }
 //bytes3 end
 
 uint32_t Player::getDuelTeam() const { return playerData()->duel_team; }
@@ -344,12 +356,82 @@ void Player::setDuelTeam(uint32_t team) { write(playerData()->duel_team, team); 
 uint32_t Player::getGuildTimestamp() const { return playerData()->guild_timestamp; }
 void Player::setGuildTimestamp(uint32_t timestamp) { write(playerData()->guild_timestamp, timestamp); }
 
+//QuestLog start
+uint32_t Player::getQuestLogEntryForSlot(uint8_t slot) const { return playerData()->quests[slot].quest_id; }
+void Player::setQuestLogEntryBySlot(uint8_t slot, uint32_t questEntry) { write(playerData()->quests[slot].quest_id, questEntry); }
+
+#if VERSION_STRING > Classic
+uint32_t Player::getQuestLogStateForSlot(uint8_t slot) const { return playerData()->quests[slot].state; }
+void Player::setQuestLogStateBySlot(uint8_t slot, uint32_t state) { write(playerData()->quests[slot].state, state); }
+#else
+uint32_t Player::getQuestLogStateForSlot(uint8_t slot) const
+{
+    //\todo: get last 1*8 bits as state
+    return playerData()->quests[slot].required_count_state;
+}
+
+void Player::setQuestLogStateBySlot(uint8_t slot, uint32_t state)
+{
+    //\todo: write last 1*8 bits as state
+    write(playerData()->quests[slot].required_count_state, state);
+}
+#endif
+
+#if VERSION_STRING > TBC
+uint64_t Player::getQuestLogRequiredMobOrGoForSlot(uint8_t slot) const { return playerData()->quests[slot].required_mob_or_go; }
+void Player::setQuestLogRequiredMobOrGoBySlot(uint8_t slot, uint64_t mobOrGoCount) { write(playerData()->quests[slot].required_mob_or_go, mobOrGoCount); }
+#elif VERSION_STRING == TBC
+uint32_t Player::getQuestLogRequiredMobOrGoForSlot(uint8_t slot) const { return playerData()->quests[slot].required_mob_or_go; }
+void Player::setQuestLogRequiredMobOrGoBySlot(uint8_t slot, uint32_t mobOrGoCount) { write(playerData()->quests[slot].required_mob_or_go, mobOrGoCount); }
+#else
+uint32_t Player::getQuestLogRequiredMobOrGoForSlot(uint8_t slot) const
+{
+    //\todo: get first 4*6 bits as required count
+    return playerData()->quests[slot].required_count_state;
+}
+void Player::setQuestLogRequiredMobOrGoBySlot(uint8_t slot, uint32_t mobOrGoCount)
+{
+    //\todo: write first 4*6 bits as required count
+    write(playerData()->quests[slot].required_count_state, mobOrGoCount);
+}
+#endif
+
+uint32_t Player::getQuestLogExpireTimeForSlot(uint8_t slot) const { return playerData()->quests[slot].expire_time; }
+void Player::setQuestLogExpireTimeBySlot(uint8_t slot, uint32_t expireTime) { write(playerData()->quests[slot].expire_time, expireTime); }
+//QuestLog end
+
+//VisibleItem start
+uint32_t Player::getVisibleItemEntry(uint32_t slot) const { return playerData()->visible_items[slot].entry; }
+void Player::setVisibleItemEntry(uint32_t slot, uint32_t entry) { write(playerData()->visible_items[slot].entry, entry); }
+
+#if VERSION_STRING > TBC
+uint32_t Player::getVisibleItemEnchantment(uint32_t slot) const { return playerData()->visible_items[slot].enchantment; }
+void Player::setVisibleItemEnchantment(uint32_t slot, uint32_t enchantment) { write(playerData()->visible_items[slot].enchantment, enchantment); }
+#else
+uint32_t Player::getVisibleItemEnchantment(uint32_t slot, uint32_t pos) const { return playerData()->visible_items[slot].unk0[pos]; }
+void Player::setVisibleItemEnchantment(uint32_t slot, uint32_t pos, uint32_t enchantment)  { write(playerData()->visible_items[slot].unk0[pos], enchantment); }
+#endif
+//VisibleItem end
+
+uint64_t Player::getVendorBuybackSlot(uint8_t slot) const { return playerData()->vendor_buy_back_slot[slot]; }
+void Player::setVendorBuybackSlot(uint8_t slot, uint64_t guid) { write(playerData()->vendor_buy_back_slot[slot], guid); }
+
 uint64_t Player::getFarsightGuid() const { return playerData()->farsight_guid; }
 void Player::setFarsightGuid(uint64_t farsightGuid) { write(playerData()->farsight_guid, farsightGuid); }
 
 #if VERSION_STRING > Classic
+uint64_t Player::getKnownTitles(uint8_t index) const { return playerData()->field_known_titles[index]; }
+void Player::setKnownTitles(uint8_t index, uint64_t title) { write(playerData()->field_known_titles[index], title); }
+#endif
+
+#if VERSION_STRING > Classic
 uint32_t Player::getChosenTitle() const { return playerData()->chosen_title; }
 void Player::setChosenTitle(uint32_t title) { write(playerData()->chosen_title, title); }
+#endif
+
+#if VERSION_STRING == WotLK
+uint64_t Player::getKnownCurrencies() const { return playerData()->field_known_currencies; }
+void Player::setKnownCurrencies(uint64_t currencies) { write(playerData()->field_known_currencies, currencies); }
 #endif
 
 uint32_t Player::getXp() const { return playerData()->xp; }
@@ -357,6 +439,9 @@ void Player::setXp(uint32_t xp) { write(playerData()->xp, xp); }
 
 uint32_t Player::getNextLevelXp() const { return playerData()->next_level_xp; }
 void Player::setNextLevelXp(uint32_t xp) { write(playerData()->next_level_xp, xp); }
+
+uint32_t Player::getValueFromSkillInfoIndex(uint32_t index) const { return playerData()->skill_info[index]; }
+void Player::setValueBySkillInfoIndex(uint32_t index, uint32_t value) { write(playerData()->skill_info[index], value); }
 
 uint32_t Player::getFreeTalentPoints() const
 {
@@ -388,6 +473,12 @@ void Player::setFreePrimaryProfessionPoints(uint32_t points)
     write(playerData()->character_points_1, points);
 #endif
 }
+
+uint32_t Player::getTrackCreature() const { return playerData()->track_creatures; }
+void Player::setTrackCreature(uint32_t id) { write(playerData()->track_creatures, id); }
+
+uint32_t Player::getTrackResource() const { return playerData()->track_resources; }
+void Player::setTrackResource(uint32_t id) { write(playerData()->track_resources, id); }
 
 float Player::getBlockPercentage() const { return playerData()->block_pct; }
 void Player::setBlockPercentage(float value) { write(playerData()->block_pct, value); }
@@ -429,6 +520,13 @@ void Player::setShieldBlock(uint32_t value) { write(playerData()->shield_block, 
 float Player::getShieldBlockCritPercentage() const { return playerData()->shield_block_crit_pct; }
 void Player::setShieldBlockCritPercentage(float value) { write(playerData()->shield_block_crit_pct, value); }
 #endif
+
+uint32_t Player::getExploredZone(uint32_t idx) const
+{
+    ARCEMU_ASSERT(idx < WOWPLAYER_EXPLORED_ZONES_COUNT)
+
+    return playerData()->explored_zones[idx];
+}
 
 void Player::setExploredZone(uint32_t idx, uint32_t data)
 {
@@ -475,6 +573,14 @@ void Player::setMaxLevel(uint32_t level)
 #endif 
 }
 
+#if VERSION_STRING >= WotLK
+float Player::getRuneRegen(uint8_t rune) const { return playerData()->rune_regen[rune]; }
+void Player::setRuneRegen(uint8_t rune, float regen) { write(playerData()->rune_regen[rune], regen); }
+#endif
+
+uint32_t Player::getRestStateXp() const { return playerData()->rest_state_xp; }
+void Player::setRestStateXp(uint32_t xp)  { write(playerData()->rest_state_xp, xp); }
+
 #if VERSION_STRING < Cata
 uint32_t Player::getCoinage() const { return playerData()->field_coinage; }
 void Player::setCoinage(uint32_t coinage) { write(playerData()->field_coinage, coinage); }
@@ -491,6 +597,14 @@ void Player::modCoinage(int64_t coinage)
 {
     setCoinage(getCoinage() + coinage);
 }
+#endif
+
+#if VERSION_STRING == Classic
+uint32_t Player::getResistanceBuffModPositive(uint8_t type) const { return playerData()->resistance_buff_mod_positive[type]; }
+void Player::setResistanceBuffModPositive(uint8_t type, uint32_t value) { write(playerData()->resistance_buff_mod_positive[type], value); }
+
+uint32_t Player::getResistanceBuffModNegative(uint8_t type) const { return playerData()->resistance_buff_mod_negative[type]; }
+void Player::setResistanceBuffModNegative(uint8_t type, uint32_t value) { write(playerData()->resistance_buff_mod_negative[type], value); }
 #endif
 
 uint32_t Player::getModDamageDonePositive(uint16_t school) const { return playerData()->field_mod_damage_done_positive[school]; }
@@ -529,6 +643,30 @@ uint32_t Player::getAmmoId() const { return playerData()->ammo_id; }
 void Player::setAmmoId(uint32_t id) { write(playerData()->ammo_id, id); }
 #endif
 
+uint32_t Player::getBuybackPriceSlot(uint8_t slot) const { return playerData()->field_buy_back_price[slot]; }
+void Player::setBuybackPriceSlot(uint8_t slot, uint32_t price) { write(playerData()->field_buy_back_price[slot], price); }
+
+uint32_t Player::getBuybackTimestampSlot(uint8_t slot) const { return playerData()->field_buy_back_timestamp[slot]; }
+void Player::setBuybackTimestampSlot(uint8_t slot, uint32_t timestamp) { write(playerData()->field_buy_back_timestamp[slot], timestamp); }
+
+#if VERSION_STRING > Classic
+uint32_t Player::getFieldKills() const { return playerData()->field_kills; }
+void Player::setFieldKills(uint32_t kills) { write(playerData()->field_kills, kills); }
+#endif
+
+#if VERSION_STRING > Classic
+#if VERSION_STRING < Cata
+    uint32_t Player::getContributionToday() const { return playerData()->field_contribution_today; }
+    void Player::setContributionToday(uint32_t contribution) { write(playerData()->field_contribution_today, contribution); }
+
+    uint32_t Player::getContributionYesterday() const { return playerData()->field_contribution_yesterday; }
+    void Player::setContributionYesterday(uint32_t contribution) { write(playerData()->field_contribution_yesterday, contribution); }
+#endif
+#endif
+
+uint32_t Player::getLifetimeHonorableKills() const { return playerData()->field_lifetime_honorable_kills; }
+void Player::setLifetimeHonorableKills(uint32_t kills) { write(playerData()->field_lifetime_honorable_kills, kills); }
+
 #if VERSION_STRING != Mop
 uint32_t Player::getPlayerFieldBytes2() const { return playerData()->player_field_bytes_2.raw; }
 void Player::setPlayerFieldBytes2(uint32_t bytes) { write(playerData()->player_field_bytes_2.raw, bytes); }
@@ -539,7 +677,24 @@ void Player::setCombatRating(uint8_t combatRating, uint32_t value) { write(playe
 void Player::modCombatRating(uint8_t combatRating, int32_t value) { setCombatRating(combatRating, getCombatRating(combatRating) + value); }
 
 #if VERSION_STRING > Classic
+    // field_arena_team_info start
+uint32_t Player::getArenaTeamId(uint8_t teamSlot) const { return playerData()->field_arena_team_info[teamSlot].team_id; }
+void Player::setArenaTeamId(uint8_t teamSlot, uint32_t teamId) { write(playerData()->field_arena_team_info[teamSlot].team_id, teamId); }
+
+uint32_t Player::getArenaTeamMemberRank(uint8_t teamSlot) const { return playerData()->field_arena_team_info[teamSlot].member_rank; }
+void Player::setArenaTeamMemberRank(uint8_t teamSlot, uint32_t rank) { write(playerData()->field_arena_team_info[teamSlot].member_rank, rank); }
+    // field_arena_team_info end
+#endif
+
+uint64_t Player::getInventorySlotItemGuid(uint8_t index) const { return playerData()->inventory_slot[index]; }
+void Player::setInventorySlotItemGuid(uint8_t index, uint64_t guid) { write(playerData()->inventory_slot[index], guid); }
+
+#if VERSION_STRING > Classic
 #if VERSION_STRING < Cata
+uint32_t Player::getHonorCurrency() const { return playerData()->field_honor_currency; }
+void Player::setHonorCurrency(uint32_t amount) { write(playerData()->field_honor_currency, amount); }
+void Player::modHonorCurrency(int32_t value) { setArenaCurrency(getArenaCurrency() + value); }
+
 uint32_t Player::getArenaCurrency() const { return playerData()->field_arena_currency; }
 void Player::setArenaCurrency(uint32_t amount) { write(playerData()->field_arena_currency, amount); }
 void Player::modArenaCurrency(int32_t value) { setArenaCurrency(getArenaCurrency() + value); }
@@ -550,12 +705,16 @@ void Player::modArenaCurrency(int32_t value) { setArenaCurrency(getArenaCurrency
 uint32_t Player::getNoReagentCost(uint8_t index) const { return playerData()->no_reagent_cost[index]; }
 void Player::setNoReagentCost(uint8_t index, uint32_t value) { write(playerData()->no_reagent_cost[index], value); }
 
+uint32_t Player::getGlyphSlot(uint16_t slot) const { return playerData()->field_glyphs[slot]; }
+void Player::setGlyphSlot(uint16_t slot, uint32_t glyph) { write(playerData()->field_glyphs[slot], glyph); }
+
 uint32_t Player::getGlyph(uint16_t slot) const { return playerData()->field_glyphs[slot]; }
 void Player::setGlyph(uint16_t slot, uint32_t glyph) { write(playerData()->field_glyphs[slot], glyph); }
 
 uint32_t Player::getGlyphsEnabled() const { return playerData()->glyphs_enabled; }
 void Player::setGlyphsEnabled(uint32_t glyphs) { write(playerData()->glyphs_enabled, glyphs); }
 #endif
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Movement
@@ -709,9 +868,6 @@ bool Player::isSpellFitByClassAndRace(uint32_t /*spell_id*/)
     return false;
 }
 
-void Player::sendAuctionCommandResult(Auction* /*auction*/, uint32_t /*action*/, uint32_t /*errorCode*/, uint32_t /*bidError*/)
-{
-}
 #else
 void Player::sendForceMovePacket(UnitSpeedType speed_type, float speed)
 {
@@ -1166,41 +1322,6 @@ void Player::sendChatPacket(uint32_t type, uint32_t language, const char* messag
     this->SendPacket(&selfData);
 }
 
-void Player::sendAuctionCommandResult(Auction* auction, uint32_t action, uint32_t errorCode, uint32_t bidError)
-{
-    WorldPacket data(SMSG_AUCTION_COMMAND_RESULT);
-    data << uint32_t(auction ? auction->Id : 0);
-    data << uint32_t(action);
-    data << uint32_t(errorCode);
-
-    switch (errorCode)
-    {
-        case AUCTION_ERROR_NONE:
-        {
-            if (action == AUCTION_BID)
-            {
-                data << uint64_t(auction->HighestBid ? auction->GetAuctionOutBid() : 0);
-            }
-            break;
-        }
-        case AUCTION_ERROR_INVENTORY:
-        {
-            data << uint32_t(bidError);
-            break;
-        }
-        case AUCTION_ERROR_HIGHER_BID:
-        {
-            data << uint64_t(auction->HighestBidder);
-            data << uint64_t(auction->HighestBid);
-            data << uint64_t(auction->HighestBid ? auction->GetAuctionOutBid() : 0);
-            break;
-        }
-        default: break;
-    }
-
-    SendPacket(&data);
-}
-
 bool Player::isSpellFitByClassAndRace(uint32_t spell_id)
 {
     auto racemask = getRaceMask();
@@ -1572,10 +1693,14 @@ void Player::setInitialPlayerData()
 
         setPowerCostModifier(i, 0);
         setPowerCostMultiplier(i, 0.0f);
-#if VERSION_STRING >= WotLK
-        setNoReagentCost(i, 0);
-#endif
     }
+
+#if VERSION_STRING >= WotLK
+    for (uint8_t i = 0; i < WOWPLAYER_NO_REAGENT_COST_COUNT; ++i)
+    {
+        setNoReagentCost(i, 0);
+    }
+#endif
 
     for (uint8_t i = 0; i < MAX_PCR; ++i)
         setCombatRating(i, 0);
@@ -1899,21 +2024,15 @@ void Player::addGlobalCooldown(SpellInfo const* spellInfo, const bool sendPacket
 
 void Player::sendSpellCooldownPacket(SpellInfo const* spellInfo, const uint32_t duration, const bool isGcd)
 {
-    // Initialize packet size
-#if VERSION_STRING == Classic
-    const uint8_t packetSize = 16;
-#else
-    const uint8_t packetSize = 17;
-#endif
+    std::vector<SmsgSpellCooldownMap> spellMap;
 
-    WorldPacket data(SMSG_SPELL_COOLDOWN, packetSize);
-    data << GetNewGUID();
-#if VERSION_STRING >= TBC
-    data << uint8_t(isGcd ? 1 : 0); // flags
-#endif
-    data << uint32_t(spellInfo->getId());
-    data << uint32_t(duration);
-    SendMessageToSet(&data, true);
+    SmsgSpellCooldownMap mapMembers;
+    mapMembers.spellId = spellInfo->getId();
+    mapMembers.duration = duration;
+
+    spellMap.push_back(mapMembers);
+
+    SendMessageToSet(SmsgSpellCooldown(GetNewGUID(), isGcd, spellMap).serialise().get(), true);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -2535,6 +2654,26 @@ void Player::sendActionBars(bool clearBars)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
+// Auction
+void Player::sendAuctionCommandResult(Auction* auction, uint32_t action, uint32_t errorCode, uint32_t bidError)
+{
+    const auto auctionId = auction ? auction->Id : 0;
+
+    uint32_t outBid = 0;
+    uint32_t highestBid = 0;
+    uint64_t highestBidderGuid = 0;
+
+    if (auction)
+    {
+        outBid = auction->highestBid ? auction->getAuctionOutBid() : 0;
+        highestBid = auction->highestBid;
+        highestBidderGuid = auction->highestBidderGuid;
+    }
+
+    SendPacket(SmsgAuctionCommandResult(auctionId, action, errorCode, outBid, highestBid, bidError, highestBidderGuid).serialise().get());
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
 // Trade
 Player* Player::getTradeTarget() const
 {
@@ -2670,9 +2809,7 @@ bool Player::isGMFlagSet()
 void Player::sendMovie(uint32_t movieId)
 {
 #if VERSION_STRING > TBC
-    WorldPacket data(SMSG_TRIGGER_MOVIE, 4);
-    data << uint32_t(movieId);
-    m_session->SendPacket(&data);
+    m_session->SendPacket(SmsgTriggerMovie(movieId).serialise().get());
 #endif
 }
 
@@ -2875,13 +3012,13 @@ void Player::sendCinematicOnFirstLogin()
         if (const auto charEntry = sChrClassesStore.LookupEntry(getClass()))
         {
             if (charEntry->cinematic_id != 0)
-                OutPacket(SMSG_TRIGGER_CINEMATIC, 4, &charEntry->cinematic_id);
+                SendPacket(SmsgTriggerCinematic(charEntry->cinematic_id).serialise().get());
             else if (const auto raceEntry = sChrRacesStore.LookupEntry(getRace()))
-                OutPacket(SMSG_TRIGGER_CINEMATIC, 4, &raceEntry->cinematic_id);
+                SendPacket(SmsgTriggerCinematic(raceEntry->cinematic_id).serialise().get());
         }
 #else
         if (const auto raceEntry = sChrRacesStore.LookupEntry(getRace()))
-            OutPacket(SMSG_TRIGGER_CINEMATIC, 4, &raceEntry->cinematic_id);
+            SendPacket(SmsgTriggerCinematic(raceEntry->cinematic_id).serialise().get());
 #endif
     }
 }
@@ -3071,7 +3208,7 @@ void Player::setPvpFlag()
 #if VERSION_STRING > TBC
     setPvpFlags(getPvpFlags() | U_FIELD_BYTES_FLAG_PVP);
 #else
-    SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP);
+    addUnitFlags(UNIT_FLAG_PVP);
 #endif
 
     addPlayerFlags(PLAYER_FLAG_PVP_TIMER);
@@ -3090,7 +3227,7 @@ void Player::removePvpFlag()
 #if VERSION_STRING > TBC
     setPvpFlags(getPvpFlags() & ~U_FIELD_BYTES_FLAG_PVP);
 #else
-    RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP);
+    removeUnitFlags(UNIT_FLAG_PVP);
 #endif
 
     removePlayerFlags(PLAYER_FLAG_PVP_TIMER);
@@ -3158,4 +3295,34 @@ void Player::sendPvpCredit(uint32_t honor, uint64_t victimGuid, uint32_t victimR
 void Player::sendRaidGroupOnly(uint32_t timeInMs, uint32_t type)
 {
     this->SendPacket(SmsgRaidGroupOnly(timeInMs, type).serialise().get());
+}
+
+void Player::setVisibleItemFields(uint32_t slot, Item* item)
+{
+    if (item)
+    {
+        setVisibleItemEntry(slot, item->getEntry());
+#if VERSION_STRING > TBC
+        setVisibleItemEnchantment(slot, item->getEnchantmentId(0));
+#else
+        setVisibleItemEnchantment(slot, 0, item->getEnchantmentId(0));
+        setVisibleItemEnchantment(slot, 1, item->getEnchantmentId(3));
+        setVisibleItemEnchantment(slot, 2, item->getEnchantmentId(6));
+        setVisibleItemEnchantment(slot, 3, item->getEnchantmentId(9));
+        setVisibleItemEnchantment(slot, 4, item->getEnchantmentId(12));
+        setVisibleItemEnchantment(slot, 5, item->getEnchantmentId(15));
+        setVisibleItemEnchantment(slot, 6, item->getEnchantmentId(18));
+        setVisibleItemEnchantment(slot, 7, item->getRandomPropertiesId());
+#endif
+    }
+    else
+    {
+        setVisibleItemEntry(slot, 0);
+#if VERSION_STRING > TBC
+        setVisibleItemEnchantment(slot, 0);
+#else
+        for (uint8_t i = 0; i < WOWPLAYER_VISIBLE_ITEM_UNK0_COUNT; ++i)
+            setVisibleItemEnchantment(slot, i, 0);
+#endif
+    }
 }

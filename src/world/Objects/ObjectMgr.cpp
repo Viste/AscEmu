@@ -37,6 +37,7 @@
 #include "Units/Creatures/Pet.h"
 #include "Spell/Definitions/SpellEffects.h"
 #include "Management/GuildMgr.h"
+#include "Management/TaxiMgr.h"
 #if VERSION_STRING < Cata
 #include "Management/Guild.h"
 #endif
@@ -536,7 +537,7 @@ Corpse* ObjectMgr::LoadCorpse(uint32 guid)
     pCorpse->SetPosition(fields[1].GetFloat(), fields[2].GetFloat(), fields[3].GetFloat(), fields[4].GetFloat());
     pCorpse->SetZoneId(fields[5].GetUInt32());
     pCorpse->SetMapId(fields[6].GetUInt32());
-    pCorpse->LoadValues(fields[7].GetString());
+    pCorpse->setCorpseDataFromDbString(fields[7].GetString());
     if (pCorpse->getDisplayId() == 0)
     {
         delete pCorpse;
@@ -1300,7 +1301,7 @@ void ObjectMgr::LoadCorpses(MapMgr* mgr)
             pCorpse->SetZoneId(fields[5].GetUInt32());
             pCorpse->SetMapId(fields[6].GetUInt32());
             pCorpse->SetInstanceID(fields[7].GetUInt32());
-            pCorpse->LoadValues(fields[8].GetString());
+            pCorpse->setCorpseDataFromDbString(fields[8].GetString());
             if (pCorpse->getDisplayId() == 0)
             {
                 delete pCorpse;
@@ -1512,11 +1513,29 @@ void ObjectMgr::generateDatabaseGossipMenu(Object* object, uint32_t gossipMenuId
         // 0 = none
         // 1 = has(active)Quest
         // 2 = has(finished)Quest
+        // 3 = canGainXP
+        // 4 = canNotGainXP
 
         if (itr->first == gossipMenuId)
         {
             if (itr->second.requirementType == 1 && !player->HasQuest(itr->second.requirementData))
                 continue;
+
+            if (itr->second.requirementType == 3)
+            {
+                if (player->CanGainXp())
+                    menu.addItem(itr->second.icon, itr->second.menuOptionText, itr->second.itemOrder, "", itr->second.onChooseData, player->GetSession()->LocalizedGossipOption(itr->second.onChooseData2));
+                
+                continue;
+            }
+
+            if (itr->second.requirementType == 4)
+            {
+                if (!player->CanGainXp())
+                    menu.addItem(itr->second.icon, itr->second.menuOptionText, itr->second.itemOrder, "", itr->second.onChooseData, player->GetSession()->LocalizedGossipOption(itr->second.onChooseData2));
+                
+                continue;
+            }
 
             menu.addItem(itr->second.icon, itr->second.menuOptionText, itr->second.itemOrder);
         }
@@ -1545,6 +1564,7 @@ void ObjectMgr::generateDatabaseGossipOptionAndSubMenu(Object* object, Player* p
             // 3 = sendTaxi (on_choose_data = taxiId, on_choose_data2 = modelId)
             // 4 = required standing (on_choose_data = factionId, on_choose_data2 = standing, on_choose_data3 = broadcastTextId)
             // 5 = close window
+            // 6 = toggleXPGain
 
             // onChooseData
             // depending on Action...
@@ -1583,7 +1603,9 @@ void ObjectMgr::generateDatabaseGossipOptionAndSubMenu(Object* object, Player* p
                         if (player->GetStanding(itr->second.onChooseData) >= itr->second.onChooseData2)
                             player->castSpell(player, sSpellMgr.getSpellInfo(itr->second.onChooseData3), true);
                         else
-                            player->BroadcastMessage(player->GetSession()->LocalizedWorldSrv(itr->second.onChooseData4));                        GossipMenu::senGossipComplete(player);
+                            player->BroadcastMessage(player->GetSession()->LocalizedWorldSrv(itr->second.onChooseData4));
+                        
+                        GossipMenu::senGossipComplete(player);
                     }
 
                 } break;
@@ -1591,6 +1613,15 @@ void ObjectMgr::generateDatabaseGossipOptionAndSubMenu(Object* object, Player* p
                 {
                     GossipMenu::senGossipComplete(player);
 
+                } break;
+                case 6:
+                {
+                    if (player->hasEnoughCoinage(itr->second.onChooseData))
+                    {
+                        player->modCoinage(-static_cast<int32_t>(itr->second.onChooseData));
+                        player->ToggleXpGain();
+                        GossipMenu::senGossipComplete(player);
+                    }
                 } break;
                 default: // action 0
                 {
@@ -1655,7 +1686,7 @@ void ObjectMgr::LoadTrainers()
             delete tr;
             continue;
         }
-        if (result2->GetFieldCount() != 6)
+        if (result2->GetFieldCount() != 9)
         {
             LOG_ERROR("Trainers table format is invalid. Please update your database.", NULL);
             delete tr;
@@ -1669,11 +1700,11 @@ void ObjectMgr::LoadTrainers()
             {
                 Field* fields2 = result2->Fetch();
                 uint32 entry1 = fields2[0].GetUInt32();
-                uint32 spell = fields2[1].GetUInt32();
-                uint32 spellCost = fields2[2].GetUInt32();
-                uint32 reqSkill = fields2[3].GetUInt16();
-                uint32 reqSkillValue = fields2[4].GetUInt16();
-                uint32 reqLevel = fields2[5].GetUInt8();
+                uint32 spell = fields2[2].GetUInt32();
+                uint32 spellCost = fields2[3].GetUInt32();
+                uint32 reqSkill = fields2[5].GetUInt16();
+                uint32 reqSkillValue = fields2[6].GetUInt16();
+                uint32 reqLevel = fields2[7].GetUInt8();
 
                 TrainerSpell ts;
                 ts.spell = spell;
@@ -2383,7 +2414,7 @@ Pet* ObjectMgr::CreatePet(uint32 entry)
 {
     uint32 guid;
     guid = ++m_hiPetGuid;
-    return new Pet(WoWGuid::createPetGuid(entry, guid));
+    return new Pet(WoWGuid(guid, entry, HIGHGUID_TYPE_PET));
 }
 
 Player* ObjectMgr::CreatePlayer(uint8 _class)
@@ -2940,7 +2971,7 @@ ArenaTeam* ObjectMgr::GetArenaTeamByGuid(uint32 guid, uint32 Type)
     m_arenaTeamLock.Acquire();
     for (std::unordered_map<uint32, ArenaTeam*>::iterator itr = m_arenaTeamMap[Type].begin(); itr != m_arenaTeamMap[Type].end(); ++itr)
     {
-        if (itr->second->HasMember(guid))
+        if (itr->second->isMember(guid))
         {
             m_arenaTeamLock.Release();
             return itr->second;
@@ -3529,14 +3560,14 @@ void ObjectMgr::EventScriptsUpdate(Player* plr, uint32 next_event)
                 QuestLogEntry* pQuest = plr->GetQuestLogForEntry(itr->second.data_2);
                 if (pQuest != nullptr)
                 {
-                    if (pQuest->GetQuest()->required_mob_or_go[itr->second.data_5] >= 0)
+                    if (pQuest->getQuestProperties()->required_mob_or_go[itr->second.data_5] >= 0)
                     {
-                        uint32 required_mob = static_cast<uint32>(pQuest->GetQuest()->required_mob_or_go[itr->second.data_5]);
-                        if (pQuest->GetMobCount(itr->second.data_5) < required_mob)
+                        uint32 required_mob = static_cast<uint32>(pQuest->getQuestProperties()->required_mob_or_go[itr->second.data_5]);
+                        if (pQuest->getMobCountByIndex(itr->second.data_5) < required_mob)
                         {
-                            pQuest->SetMobCount(itr->second.data_5, pQuest->GetMobCount(itr->second.data_5) + 1);
+                            pQuest->setMobCountForIndex(itr->second.data_5, pQuest->getMobCountByIndex(itr->second.data_5) + 1);
                             pQuest->SendUpdateAddKill(itr->second.data_5);
-                            pQuest->UpdatePlayerFields();
+                            pQuest->updatePlayerFields();
                         }
                     }
                 }

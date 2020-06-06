@@ -1118,7 +1118,11 @@ void WorldSession::handleAutoDeclineGuildInvites(WorldPacket& recvPacket)
 
     bool enabled = enable > 0 ? true : false;
 
-    _player->ApplyModFlag(PLAYER_FLAGS, PLAYER_FLAGS_AUTO_DECLINE_GUILD, enabled);
+    if (enabled)
+        _player->addPlayerFlags(PLAYER_FLAGS_AUTO_DECLINE_GUILD);
+    else
+        _player->removePlayerFlags(PLAYER_FLAGS_AUTO_DECLINE_GUILD);
+
 }
 
 void WorldSession::handleGuildRewardsQueryOpcode(WorldPacket& recvPacket)
@@ -1484,7 +1488,7 @@ void WorldSession::handleGuildFinderGetRecruits(WorldPacket& recvPacket)
     for (std::vector<MembershipRequest>::const_iterator itr = recruitsList.begin(); itr != recruitsList.end(); ++itr)
     {
         MembershipRequest request = *itr;
-        ObjectGuid playerGuid(MAKE_NEW_GUID(request.getPlayerGUID(), 0, HIGHGUID_TYPE_PLAYER));
+        WoWGuid playerGuid(request.getPlayerGUID(), 0, HIGHGUID_TYPE_PLAYER);
 
         PlayerInfo* info = sObjectMgr.GetPlayerInfo(request.getPlayerGUID());
         std::string name = info->name;

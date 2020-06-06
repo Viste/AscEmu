@@ -30,7 +30,7 @@
 
 class Lunaclaw : public CreatureAIScript
 {
-    ADD_CREATURE_FACTORY_FUNCTION(Lunaclaw);
+    ADD_CREATURE_FACTORY_FUNCTION(Lunaclaw)
     explicit Lunaclaw(Creature* pCreature) : CreatureAIScript(pCreature) {}
 
     void OnDied(Unit* mKiller)
@@ -61,7 +61,7 @@ public:
         menu.sendGossipPacket(plr);
     }
 
-    void onSelectOption(Object* pObject, Player* plr, uint32 Id, const char* /*Code*/, uint32 /*gossipId*/) override
+    void onSelectOption(Object* pObject, Player* plr, uint32_t Id, const char* /*Code*/, uint32_t /*gossipId*/) override
     {
         Creature* pCreature = static_cast<Creature*>(pObject);
 
@@ -75,12 +75,12 @@ public:
                 if (qle == nullptr)
                     return;
 
-                if (qle->CanBeFinished())
+                if (qle->canBeFinished())
                     return;
 
-                qle->Complete();
-                qle->SendQuestComplete();
-                qle->UpdatePlayerFields();
+                qle->setStateComplete();
+                qle->sendQuestComplete();
+                qle->updatePlayerFields();
 
                 pCreature->Emote(EMOTE_ONESHOT_WAVE);
                 pCreature->Despawn(240000, 0);
@@ -95,12 +95,12 @@ public:
                 if (qle == nullptr)
                     return;
 
-                if (qle->CanBeFinished())
+                if (qle->canBeFinished())
                     return;
 
-                qle->Complete();
-                qle->SendQuestComplete();
-                qle->UpdatePlayerFields();
+                qle->setStateComplete();
+                qle->sendQuestComplete();
+                qle->updatePlayerFields();
 
                 pCreature->Emote(EMOTE_ONESHOT_WAVE);
                 pCreature->Despawn(240000, 0);
@@ -126,7 +126,7 @@ public:
         menu.sendGossipPacket(plr);
     }
 
-    void onSelectOption(Object* pObject, Player* plr, uint32 Id, const char* /*Code*/, uint32 /*gossipId*/) override
+    void onSelectOption(Object* pObject, Player* plr, uint32_t Id, const char* /*Code*/, uint32_t /*gossipId*/) override
     {
         switch (Id)
         {
@@ -159,12 +159,12 @@ public:
                 if (qle == nullptr)
                     return;
 
-                if (qle->CanBeFinished())
+                if (qle->canBeFinished())
                     return;
 
-                qle->Complete();
-                qle->SendQuestComplete();
-                qle->UpdatePlayerFields();
+                qle->setStateComplete();
+                qle->sendQuestComplete();
+                qle->updatePlayerFields();
                 break;
             }
             case 5:
@@ -196,12 +196,12 @@ public:
                 if (qle == nullptr)
                     return;
 
-                if (qle->CanBeFinished())
+                if (qle->canBeFinished())
                     return;
 
-                qle->Complete();
-                qle->SendQuestComplete();
-                qle->UpdatePlayerFields();
+                qle->setStateComplete();
+                qle->sendQuestComplete();
+                qle->updatePlayerFields();
                 break;
             }
         }

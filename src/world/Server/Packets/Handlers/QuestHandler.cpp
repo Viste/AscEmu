@@ -21,6 +21,7 @@ This file is released under the MIT license. See README-MIT for more information
 #include "Storage/MySQLDataStore.hpp"
 #include "Map/MapMgr.h"
 #include "Management/ItemInterface.h"
+#include "Server/Packets/SmsgGossipComplete.h"
 
 using namespace AscEmu::Packets;
 
@@ -36,8 +37,14 @@ WorldPacket* WorldSession::buildQuestQueryResponse(QuestProperties const* qst)
 
     *data << uint32_t(qst->id);                                       // Quest ID
     *data << uint32_t(2);                                             // Unknown, always seems to be 2
+
+#if VERSION_STRING > TBC
     *data << int32_t(qst->questlevel);                                // Quest level
     *data << uint32_t(qst->min_level);                                // Quest required level
+#endif
+
+    *data << uint32_t(qst->min_level);                                // Quest required level
+
 
     if (qst->quest_sort > 0)
         *data << int32_t(-(int32_t)qst->quest_sort);                    // Negative if pointing to a sort.
@@ -54,6 +61,7 @@ WorldPacket* WorldSession::buildQuestQueryResponse(QuestProperties const* qst)
     *data << uint32_t(0);                                             // Unknown (always 0)
 
     *data << uint32_t(qst->next_quest_id);                            // Next Quest ID
+#if VERSION_STRING > TBC
     *data << uint32_t(0);                                             // Column id +1 from QuestXp.dbc, entry is quest level
 
     *data << uint32_t(sQuestMgr.GenerateRewardMoney(_player, qst));   // Copper reward
@@ -71,6 +79,19 @@ WorldPacket* WorldSession::buildQuestQueryResponse(QuestProperties const* qst)
     *data << qst->rewardtalents;
     *data << uint32_t(0);                                             // 3.3.0 Unknown
     *data << uint32_t(0);                                             // 3.3.0 Unknown
+#else
+    *data << uint32_t(sQuestMgr.GenerateRewardMoney(_player, qst));   // Copper reward
+    *data << uint32_t(qst->reward_money < 0 ? -qst->reward_money : 0);    // Required Money
+
+    *data << uint32_t(qst->effect_on_player);                         // Spell casted on player upon completion
+    *data << uint32_t(qst->reward_spell);                             // Spell added to spellbook upon completion
+
+    *data << uint32_t(qst->bonushonor);                               // 2.3.0 - bonus honor
+
+    *data << uint32_t(qst->srcitem);                                  // Item given at the start of a quest (srcitem)
+    *data << uint32_t(qst->quest_flags);                              // Quest Flags
+    *data << qst->rewardtitleid;                                    // 2.4.0 unk
+#endif
 
     // (loop 4 times)
     for (i = 0; i < 4; ++i)
@@ -86,6 +107,7 @@ WorldPacket* WorldSession::buildQuestQueryResponse(QuestProperties const* qst)
         *data << qst->reward_choiceitemcount[i];    // Choice Reward Item Count [i]
     }
 
+#if VERSION_STRING > TBC
     // (loop 5 times) - these 3 loops are here to allow displaying rep rewards in client (not handled in core yet)
     for (i = 0; i < 5; ++i)
         *data << uint32_t(qst->reward_repfaction[i]); // reward factions ids
@@ -95,6 +117,7 @@ WorldPacket* WorldSession::buildQuestQueryResponse(QuestProperties const* qst)
 
     for (i = 0; i < 5; ++i)                         // Unknown
         *data << uint32_t(0);
+#endif
 
     *data << qst->point_mapid;
     *data << qst->point_x;
@@ -107,7 +130,9 @@ WorldPacket* WorldSession::buildQuestQueryResponse(QuestProperties const* qst)
         *data << lci->objectives;
         *data << lci->details;
         *data << lci->endText;
+#if VERSION_STRING > TBC
         *data << uint8_t(0);
+#endif
     }
     else
     {
@@ -115,22 +140,31 @@ WorldPacket* WorldSession::buildQuestQueryResponse(QuestProperties const* qst)
         *data << qst->objectives;                   // Objectives / description
         *data << qst->details;                      // Details
         *data << qst->endtext;                      // Subdescription
+#if VERSION_STRING > TBC
         *data << uint8_t(0);                          // most 3.3.0 quests i seen have something like "Return to NPCNAME"
+#endif
     }
 
     for (i = 0; i < 4; ++i)
     {
         *data << qst->required_mob_or_go[i];              // Kill mob entry ID [i]
         *data << qst->required_mob_or_go_count[i];         // Kill mob count [i]
+#if VERSION_STRING > TBC
         *data << uint32_t(0);                         // Unknown
         *data << uint32_t(0);                         // 3.3.0 Unknown
+#else
+        *data << qst->required_item[i];             // Collect item [i]
+        *data << qst->required_itemcount[i];        // Collect item count [i]
+#endif
     }
 
+#if VERSION_STRING > TBC
     for (i = 0; i < MAX_REQUIRED_QUEST_ITEM; ++i)
     {
         *data << qst->required_item[i];             // Collect item [i]
         *data << qst->required_itemcount[i];        // Collect item count [i]
     }
+#endif
 
     if (lci != nullptr)
     {
@@ -368,7 +402,7 @@ void WorldSession::handleQuestgiverCancelOpcode(WorldPacket& /*recvPacket*/)
 {
     CHECK_INWORLD_RETURN
 
-    OutPacket(SMSG_GOSSIP_COMPLETE, 0, nullptr);
+    SendPacket(SmsgGossipComplete().serialise().get());
 
     LogDebugFlag(LF_OPCODE, "Sent SMSG_GOSSIP_COMPLETE");
 }
@@ -428,7 +462,7 @@ void WorldSession::handleQuestgiverStatusQueryOpcode(WorldPacket& recvPacket)
     }
     else if (srlPacket.questGiverGuid.isItem())
     {
-        Item* quest_giver = _player->getItemInterface()->GetItemByGUID(srlPacket.questGiverGuid.GetOldGuid());
+        Item* quest_giver = _player->getItemInterface()->GetItemByGUID(srlPacket.questGiverGuid.getRawGuid());
         if (quest_giver)
             qst_giver = quest_giver;
         else
@@ -445,12 +479,12 @@ void WorldSession::handleQuestgiverStatusQueryOpcode(WorldPacket& recvPacket)
 
     if (!qst_giver)
     {
-        LogDebugFlag(LF_OPCODE, "Invalid questgiver GUID " I64FMT ".", srlPacket.questGiverGuid.GetOldGuid());
+        LogDebugFlag(LF_OPCODE, "Invalid questgiver GUID " I64FMT ".", srlPacket.questGiverGuid.getRawGuid());
         return;
     }
 
     const uint32_t questStatus = sQuestMgr.CalcStatus(qst_giver, _player);
-    SendPacket(SmsgQuestgiverStatus(srlPacket.questGiverGuid.GetOldGuid(), questStatus).serialise().get());
+    SendPacket(SmsgQuestgiverStatus(srlPacket.questGiverGuid.getRawGuid(), questStatus).serialise().get());
 }
 
 void WorldSession::handleQuestGiverQueryQuestOpcode(WorldPacket& recvPacket)
@@ -502,7 +536,7 @@ void WorldSession::handleQuestGiverQueryQuestOpcode(WorldPacket& recvPacket)
     }
     else if (srlPacket.guid.isItem())
     {
-        Item* quest_giver = _player->getItemInterface()->GetItemByGUID(srlPacket.guid.GetOldGuid());
+        Item* quest_giver = _player->getItemInterface()->GetItemByGUID(srlPacket.guid.getRawGuid());
         if (quest_giver)
             qst_giver = quest_giver;
         else
@@ -570,9 +604,9 @@ void WorldSession::handleQuestlogRemoveQuestOpcode(WorldPacket& recvPacket)
         LogDebugFlag(LF_OPCODE, " No quest in slot %d.", srlPacket.questLogSlot);
         return;
     }
-    QuestProperties const* qPtr = qEntry->GetQuest();
+    QuestProperties const* qPtr = qEntry->getQuestProperties();
     CALL_QUESTSCRIPT_EVENT(qEntry, OnQuestCancel)(_player);
-    qEntry->Finish();
+    qEntry->finishAndRemove();
 
     for (uint8_t i = 0; i < 4; ++i)
     {
@@ -829,7 +863,7 @@ void WorldSession::handleQuestgiverChooseRewardOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (qle && !qle->CanBeFinished())
+    if (qle && !qle->canBeFinished())
     {
         LogDebugFlag(LF_OPCODE, "Quest not finished.");
         return;
@@ -847,7 +881,7 @@ void WorldSession::handleQuestgiverChooseRewardOpcode(WorldPacket& recvPacket)
     {
         WorldPacket data(12);
         data.Initialize(CMSG_QUESTGIVER_QUERY_QUEST);
-        data << srlPacket.questgiverGuid.GetOldGuid();
+        data << srlPacket.questgiverGuid.getRawGuid();
         data << qst->next_quest_id;
         handleQuestGiverQueryQuestOpcode(data);
     }

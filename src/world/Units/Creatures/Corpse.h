@@ -23,6 +23,7 @@
 
 #include "Objects/Object.h"
 #include "Management/LootMgr.h"
+#include "Data/WoWCorpse.h"
 
 enum CORPSE_STATE
 {
@@ -69,18 +70,25 @@ public:
     void setItem(uint8_t slot, uint32_t item);
 
     //bytes 1 start
+    uint32_t getBytes1() const;
+    void setBytes1(uint32_t bytes);
+
     //unk1
 
     uint8_t getRace() const;
     void setRace(uint8_t race);
 
-    //unk2
+    uint8_t getGender() const;
+    void setGender(uint8_t gender);
 
     uint8_t getSkinColor() const;
     void setSkinColor(uint8_t color);
     //bytes 1 end
 
     //bytes 2 start
+    uint32_t getBytes2() const;
+    void setBytes2(uint32_t bytes);
+
     uint8_t getFace() const;
     void setFace(uint8_t face);
 
@@ -101,6 +109,10 @@ public:
 
     uint32_t getDynamicFlags() const;
     void setDynamicFlags(uint32_t flags);
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // Misc
+    void setCorpseDataFromDbString(std::string dbString);
 
 // MIT End
 // AGPL Start
@@ -135,7 +147,7 @@ public:
 
         uint32 m_state;
         time_t m_time;
-        uint32 _fields[CORPSE_END];
+        uint32 _fields[getSizeOfStructure(WoWCorpse)];
         bool _loadedfromdb;
 };
 

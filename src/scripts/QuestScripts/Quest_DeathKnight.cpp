@@ -89,12 +89,12 @@ public:
             pCreature->GetAIInterface()->AttackReaction(pPlayer, 1, 0);
             pCreature->SendChatMessage(CHAT_MSG_MONSTER_SAY, LANG_UNIVERSAL, "You have committed a big mistake, demon");
 
-            if (en->GetMobCount(0) != 0)
+            if (en->getMobCountByIndex(0) != 0)
                 return;
 
-            en->SetMobCount(0, 1);
+            en->setMobCountForIndex(0, 1);
             en->SendUpdateAddKill(0);
-            en->UpdatePlayerFields();
+            en->updatePlayerFields();
         }
 
     }
@@ -110,10 +110,10 @@ public:
         mTarget->sendPlaySoundPacket(14734);
 
         // Play second sound after 22.5 seconds
-        sEventMgr.AddEvent(mTarget, &Player::sendPlaySoundPacket, (uint32)14735, EVENT_UNK, 22500, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+        sEventMgr.AddEvent(mTarget, &Player::sendPlaySoundPacket, (uint32_t)14735, EVENT_UNK, 22500, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
 
         // Play third sound after 48.5 seconds
-        sEventMgr.AddEvent(mTarget, &Player::sendPlaySoundPacket, (uint32)14736, EVENT_UNK, 48500, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
+        sEventMgr.AddEvent(mTarget, &Player::sendPlaySoundPacket, (uint32_t)14736, EVENT_UNK, 48500, 1, EVENT_FLAG_DO_NOT_EXECUTE_IN_WORLD_CONTEXT);
     }
 };
 

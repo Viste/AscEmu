@@ -28,6 +28,11 @@
 #include "Server/WorldConfig.h"
 #include "Map/MapMgr.h"
 #include "Server/Packets/SmsgLootRemoved.h"
+#include "Server/Packets/SmsgLootAllPassed.h"
+#include "Server/Packets/SmsgLootRollWon.h"
+#include "Server/Packets/SmsgLootRoll.h"
+
+using namespace AscEmu::Packets;
 
 struct loot_tb
 {
@@ -62,12 +67,15 @@ const T & RandomChoice(const T* variant, int count)
     float totalChance = 0;
     for (int i = 0; i < count; i++)
         totalChance += variant[i].chance;
+
     float val = Util::getRandomFloat(totalChance);
+
     for (int i = 0; i < count; i++)
     {
         val -= variant[i].chance;
         if (val <= 0) return variant[i];
     }
+
     // should not come here, buf if it does, we should return something reasonable
     return variant[count - 1];
 }
@@ -78,23 +86,28 @@ T* RandomChoiceVector(std::vector<std::pair<T*, float> > & variant)
     float totalChance = 0;
     float val;
     typename std::vector<std::pair<T*, float> >::iterator itr;
-    if (variant.size() == 0)
-        return NULL;
+
+    if (variant.empty())
+        return nullptr;
+
     for (itr = variant.begin(); itr != variant.end(); ++itr)
         totalChance += itr->second;
+
     val = Util::getRandomFloat(totalChance);
+
     for (itr = variant.begin(); itr != variant.end(); ++itr)
     {
         val -= itr->second;
         if (val <= 0) return itr->first;
     }
+
     // should not come here, buf if it does, we should return something reasonable
     return variant.begin()->first;
 }
 
 bool Loot::any() const
 {
-    return gold > 0 || items.size() > 0;
+    return gold > 0 || !items.empty();
 }
 
 LootMgr& LootMgr::getInstance()
@@ -128,11 +141,10 @@ void LootMgr::LoadLoot()
 
 DBC::Structures::ItemRandomPropertiesEntry const* LootMgr::GetRandomProperties(ItemProperties const* proto)
 {
-    std::map<uint32, RandomPropertyVector>::iterator itr;
     if (proto->RandomPropId == 0)
         return nullptr;
 
-    itr = _randomprops.find(proto->RandomPropId);
+    std::map<uint32, RandomPropertyVector>::iterator itr = _randomprops.find(proto->RandomPropId);
     if (itr == _randomprops.end())
         return nullptr;
 
@@ -141,11 +153,10 @@ DBC::Structures::ItemRandomPropertiesEntry const* LootMgr::GetRandomProperties(I
 
 DBC::Structures::ItemRandomSuffixEntry const* LootMgr::GetRandomSuffix(ItemProperties const* proto)
 {
-    std::map<uint32, RandomSuffixVector>::iterator itr;
     if (proto->RandomSuffixId == 0)
         return nullptr;
 
-    itr = _randomsuffix.find(proto->RandomSuffixId);
+    std::map<uint32, RandomSuffixVector>::iterator itr = _randomsuffix.find(proto->RandomSuffixId);
     if (itr == _randomsuffix.end())
         return nullptr;
 
@@ -155,24 +166,22 @@ DBC::Structures::ItemRandomSuffixEntry const* LootMgr::GetRandomSuffix(ItemPrope
 void LootMgr::LoadLootProp()
 {
     QueryResult* result = WorldDatabase.Query("SELECT * FROM item_randomprop_groups");
-    uint32 id, eid;
-
-    float ch;
     if (result)
     {
-        std::map<uint32, RandomPropertyVector>::iterator itr;
         do
         {
-            id = result->Fetch()[0].GetUInt32();
-            eid = result->Fetch()[1].GetUInt32();
-            ch = result->Fetch()[2].GetFloat();
+            uint32 id = result->Fetch()[0].GetUInt32();
+            uint32 eid = result->Fetch()[1].GetUInt32();
+            float ch = result->Fetch()[2].GetFloat();
             auto item_random_properties = sItemRandomPropertiesStore.LookupEntry(eid);
-            if (item_random_properties == NULL)
+            if (item_random_properties == nullptr)
             {
                 LOG_ERROR("RandomProp group %u references non-existent randomprop %u.", id, eid);
                 continue;
             }
-            itr = _randomprops.find(id);
+
+            std::map<uint32, RandomPropertyVector>::iterator itr = _randomprops.find(id);
+
             if (itr == _randomprops.end())
             {
                 RandomPropertyVector v;
@@ -187,22 +196,24 @@ void LootMgr::LoadLootProp()
         while (result->NextRow());
         delete result;
     }
+
     result = WorldDatabase.Query("SELECT * FROM item_randomsuffix_groups");
     if (result)
     {
-        std::map<uint32, RandomSuffixVector>::iterator itr;
         do
         {
-            id = result->Fetch()[0].GetUInt32();
-            eid = result->Fetch()[1].GetUInt32();
-            ch = result->Fetch()[2].GetFloat();
+            uint32 id = result->Fetch()[0].GetUInt32();
+            uint32 eid = result->Fetch()[1].GetUInt32();
+            float ch = result->Fetch()[2].GetFloat();
             auto item_random_suffix = sItemRandomSuffixStore.LookupEntry(eid);
-            if (item_random_suffix == NULL)
+            if (item_random_suffix == nullptr)
             {
                 LOG_ERROR("RandomSuffix group %u references non-existent randomsuffix %u.", id, eid);
                 continue;
             }
-            itr = _randomsuffix.find(id);
+
+            std::map<uint32, RandomSuffixVector>::iterator itr = _randomsuffix.find(id);
+
             if (itr == _randomsuffix.end())
             {
                 RandomSuffixVector v;
@@ -239,7 +250,6 @@ void LootMgr::finalize()
 void LootMgr::LoadLootTables(const char* szTableName, LootStore* LootTable)
 {
     std::vector< std::pair< uint32, std::vector< tempy > > > db_cache;
-    std::vector< std::pair< uint32, std::vector< tempy > > >::iterator itr;
     db_cache.reserve(10000);
     LootStore::iterator tab;
     QueryResult* result = WorldDatabase.Query("SELECT * FROM %s ORDER BY entryid ASC", szTableName);
@@ -248,27 +258,28 @@ void LootMgr::LoadLootTables(const char* szTableName, LootStore* LootTable)
         LOG_ERROR("Loading loot from table %s failed.", szTableName);
         return;
     }
-    uint32 entry_id = 0;
+
     uint32 last_entry = 0;
-    uint32 total = (uint32)result->GetRowCount();
-    int pos = 0;
     std::vector< tempy > ttab;
-    tempy t;
+    
     do
     {
         Field* fields = result->Fetch();
-        entry_id = fields[0].GetUInt32();
+        uint32 entry_id = fields[0].GetUInt32();
         if (entry_id < last_entry)
         {
             LOG_ERROR("WARNING: Out of order loot table being loaded.");
             return;
         }
+
         if (entry_id != last_entry)
         {
             if (last_entry != 0)
                 db_cache.push_back(make_pair(last_entry, ttab));
             ttab.clear();
         }
+
+        tempy t;
         t.itemid = fields[1].GetUInt32();
         t.chance = fields[2].GetFloat();
         t.chance_2 = fields[3].GetFloat();
@@ -283,13 +294,10 @@ void LootMgr::LoadLootTables(const char* szTableName, LootStore* LootTable)
     //last list was not pushed in
     if (last_entry != 0 && ttab.size())
         db_cache.push_back(make_pair(last_entry, ttab));
-    pos = 0;
-    total = (uint32)db_cache.size();
 
-    uint32 itemid;
-    for (itr = db_cache.begin(); itr != db_cache.end(); ++itr)
+    for (std::vector<std::pair<uint32, std::vector<tempy>>>::iterator itr = db_cache.begin(); itr != db_cache.end(); ++itr)
     {
-        entry_id = (*itr).first;
+        uint32 entry_id = (*itr).first;
         if (LootTable->end() == LootTable->find(entry_id))
         {
             StoreLootList list;
@@ -299,11 +307,11 @@ void LootMgr::LoadLootTables(const char* szTableName, LootStore* LootTable)
             for (std::vector< tempy >::iterator itr2 = itr->second.begin(); itr2 != itr->second.end(); ++itr2)
             {
                 //Omit items that are not in db to prevent future bugs
-                itemid = itr2->itemid;
+                uint32 itemid = itr2->itemid;
                 ItemProperties const* proto = sMySQLStore.getItemProperties(itemid);
                 if (!proto)
                 {
-                    list.items[ind].item.itemproto = NULL;
+                    list.items[ind].item.itemproto = nullptr;
                     LogDebugFlag(LF_DB_TABLES, "Loot for %u contains non-existant item %u . (%s)", entry_id, itemid, szTableName);
                 }
                 else
@@ -316,10 +324,12 @@ void LootMgr::LoadLootTables(const char* szTableName, LootStore* LootTable)
                     list.items[ind].chance4 = itr2->chance4;
                     list.items[ind].mincount = itr2->mincount;
                     list.items[ind].maxcount = itr2->maxcount;
+
                     if (proto->HasFlag(ITEM_FLAG_FREE_FOR_ALL))
                         list.items[ind].ffa_loot = 1;
                     else
                         list.items[ind].ffa_loot = 0;
+
                     if (LootTable == &GOLoot)
                     {
                         if (proto->Class == ITEM_CLASS_QUEST)
@@ -344,6 +354,7 @@ void LootMgr::PushLoot(StoreLootList* list, Loot* loot, uint8 type)
     uint32 count;
     if (type >= NUM_LOOT_TYPES)
         return;
+
     for (uint32 x = 0; x < list->count; x++)
     {
         if (list->items[x].item.itemproto) // this check is needed until loot DB is fixed
@@ -367,6 +378,7 @@ void LootMgr::PushLoot(StoreLootList* list, Loot* loot, uint8 type)
             // drop chance cannot be larger than 100% or smaller than 0%
             if (chance <= 0.0f || chance > 100.0f)
                 continue;
+
             ItemProperties const* itemproto = list->items[x].item.itemproto;
             if (Rand(chance * worldConfig.getFloatRate((WorldConfigRates)(RATE_DROP0 + itemproto->Quality)))) //|| itemproto->Class == ITEM_CLASS_QUEST)
             {
@@ -374,6 +386,7 @@ void LootMgr::PushLoot(StoreLootList* list, Loot* loot, uint8 type)
                     count = list->items[x].maxcount;
                 else
                     count = Util::getRandomUInt(list->items[x].maxcount - list->items[x].mincount) + list->items[x].mincount;
+
                 for (i = 0; i < loot->items.size(); ++i)
                 {
                     //itemid rand match a already placed item, if item is stackable and unique(stack), increment it, otherwise skips
@@ -384,22 +397,25 @@ void LootMgr::PushLoot(StoreLootList* list, Loot* loot, uint8 type)
                             loot->items[i].iItemsCount += count;
                             break;
                         }
-                        else if (!itemproto->Unique)
+                        if (!itemproto->Unique)
                         {
                             loot->items[i].iItemsCount += count;
                             break;
                         }
                     }
                 }
+
                 if (i != loot->items.size())
                     continue;
+
                 __LootItem itm;
                 itm.item = list->items[x].item;
                 itm.iItemsCount = count;
-                itm.roll = NULL;
+                itm.roll = nullptr;
                 itm.passed = false;
                 itm.ffa_loot = list->items[x].ffa_loot;
                 itm.has_looted.clear();
+
                 if (itemproto->Quality > 1 && itemproto->ContainerSlots == 0)
                 {
                     itm.iRandomProperty = GetRandomProperties(itemproto);
@@ -408,8 +424,8 @@ void LootMgr::PushLoot(StoreLootList* list, Loot* loot, uint8 type)
                 else
                 {
                     // save some calls :P
-                    itm.iRandomProperty = NULL;
-                    itm.iRandomSuffix = NULL;
+                    itm.iRandomProperty = nullptr;
+                    itm.iRandomSuffix = nullptr;
                 }
                 loot->items.push_back(itm);
             }
@@ -417,19 +433,13 @@ void LootMgr::PushLoot(StoreLootList* list, Loot* loot, uint8 type)
     }
     if (loot->items.size() > 16)
     {
-        std::vector<__LootItem>::iterator item_to_remove;
-        std::vector<__LootItem>::iterator itr;
-        uint32 item_quality;
-        bool quest_item;
         while (loot->items.size() > 16)
         {
-            item_to_remove = loot->items.begin();
-            item_quality = 0;
-            quest_item = false;
-            for (itr = loot->items.begin(); itr != loot->items.end(); ++itr)
+            std::vector<__LootItem>::iterator item_to_remove = loot->items.begin();
+            for (std::vector<__LootItem>::iterator itr = loot->items.begin(); itr != loot->items.end(); ++itr)
             {
-                item_quality = (*itr).item.itemproto->Quality;
-                quest_item = (*itr).item.itemproto->Class == ITEM_CLASS_QUEST;
+                uint32 item_quality = (*itr).item.itemproto->Quality;
+                bool quest_item = (*itr).item.itemproto->Class == ITEM_CLASS_QUEST;
                 if ((*item_to_remove).item.itemproto->Quality > item_quality && !quest_item)
                 {
                     item_to_remove = itr;
@@ -452,6 +462,7 @@ void LootMgr::AddLoot(Loot* loot, uint32 itemid, uint32 mincount, uint32 maxcoun
             count = maxcount;
         else
             count = Util::getRandomUInt(maxcount - mincount) + mincount;
+
         for (i = 0; i < loot->items.size(); ++i)
         {
             //itemid rand match a already placed item, if item is stackable and unique(stack), increment it, otherwise skips
@@ -462,27 +473,32 @@ void LootMgr::AddLoot(Loot* loot, uint32 itemid, uint32 mincount, uint32 maxcoun
                     loot->items[i].iItemsCount += count;
                     break;
                 }
-                else if (!itemproto->Unique)
+
+                if (!itemproto->Unique)
                 {
                     loot->items[i].iItemsCount += count;
                     break;
                 }
             }
         }
+
         if (i != loot->items.size())
             return;
+
         _LootItem item;
         item.itemproto = itemproto;
         item.displayid = itemproto->DisplayInfoID;
         __LootItem itm;
         itm.item = item;
         itm.iItemsCount = count;
-        itm.roll = NULL;
+        itm.roll = nullptr;
         itm.passed = false;
+
         if (itemproto->HasFlag(ITEM_FLAG_FREE_FOR_ALL))
             itm.ffa_loot = 1;
         else
             itm.ffa_loot = 0;
+
         itm.has_looted.clear();
         if (itemproto->Quality > 1 && itemproto->ContainerSlots == 0)
         {
@@ -492,23 +508,19 @@ void LootMgr::AddLoot(Loot* loot, uint32 itemid, uint32 mincount, uint32 maxcoun
         else
         {
             // save some calls :P
-            itm.iRandomProperty = NULL;
-            itm.iRandomSuffix = NULL;
+            itm.iRandomProperty = nullptr;
+            itm.iRandomSuffix = nullptr;
         }
         loot->items.push_back(itm);
     }
     if (loot->items.size() > 16)
     {
-        std::vector<__LootItem>::iterator item_to_remove;
-        std::vector<__LootItem>::iterator itr;
-        uint32 item_quality;
-        bool quest_item;
         while (loot->items.size() > 16)
         {
-            item_to_remove = loot->items.begin();
-            item_quality = 0;
-            quest_item = false;
-            for (itr = loot->items.begin(); itr != loot->items.end(); ++itr)
+            std::vector<__LootItem>::iterator item_to_remove = loot->items.begin();
+            uint32 item_quality = 0;
+            bool quest_item = false;
+            for (std::vector<__LootItem>::iterator itr = loot->items.begin(); itr != loot->items.end(); ++itr)
             {
                 item_quality = (*itr).item.itemproto->Quality;
                 quest_item = (*itr).item.itemproto->Class == ITEM_CLASS_QUEST;
@@ -527,8 +539,8 @@ bool LootMgr::HasLootForCreature(uint32 loot_id)
     LootStore::iterator itr = CreatureLoot.find(loot_id);
     if (itr != CreatureLoot.end())
         return true;
-    else
-        return false;
+
+    return false;
 }
 
 void LootMgr::FillCreatureLoot(Loot* loot, uint32 loot_id, uint8 type)
@@ -536,9 +548,7 @@ void LootMgr::FillCreatureLoot(Loot* loot, uint32 loot_id, uint8 type)
     loot->items.clear();
     loot->gold = 0;
     LootStore::iterator tab = CreatureLoot.find(loot_id);
-    if (CreatureLoot.end() == tab)
-        return;
-    else
+    if (CreatureLoot.end() != tab)
         PushLoot(&tab->second, loot, type);
 }
 
@@ -547,9 +557,7 @@ void LootMgr::FillGOLoot(Loot* loot, uint32 loot_id, uint8 type)
     loot->items.clear();
     loot->gold = 0;
     LootStore::iterator tab = GOLoot.find(loot_id);
-    if (GOLoot.end() == tab)
-        return;
-    else
+    if (GOLoot.end() != tab)
         PushLoot(&tab->second, loot, type);
 }
 
@@ -558,9 +566,7 @@ void LootMgr::FillFishingLoot(Loot* loot, uint32 loot_id)
     loot->items.clear();
     loot->gold = 0;
     LootStore::iterator tab = FishingLoot.find(loot_id);
-    if (FishingLoot.end() == tab)
-        return;
-    else
+    if (FishingLoot.end() != tab)
         PushLoot(&tab->second, loot, 0);
 }
 
@@ -569,9 +575,7 @@ void LootMgr::FillSkinningLoot(Loot* loot, uint32 loot_id)
     loot->items.clear();
     loot->gold = 0;
     LootStore::iterator tab = SkinningLoot.find(loot_id);
-    if (SkinningLoot.end() == tab)
-        return;
-    else
+    if (SkinningLoot.end() != tab)
         PushLoot(&tab->second, loot, 0);
 }
 
@@ -580,9 +584,7 @@ void LootMgr::FillPickpocketingLoot(Loot* loot, uint32 loot_id)
     loot->items.clear();
     loot->gold = 0;
     LootStore::iterator tab = PickpocketingLoot.find(loot_id);
-    if (PickpocketingLoot.end() == tab)
-        return;
-    else
+    if (PickpocketingLoot.end() != tab)
         PushLoot(&tab->second, loot, 0);
 }
 
@@ -602,16 +604,20 @@ bool LootMgr::CanGODrop(uint32 LootId, uint32 itemid)
 bool LootMgr::IsPickpocketable(uint32 creatureId)
 {
     LootStore::iterator tab = PickpocketingLoot.find(creatureId);
-    if (PickpocketingLoot.end() == tab)return false;
-    else return true;
+    if (PickpocketingLoot.end() == tab)
+        return false;
+
+    return true;
 }
 
 //THIS should be cached
 bool LootMgr::IsSkinnable(uint32 creatureId)
 {
     LootStore::iterator tab = SkinningLoot.find(creatureId);
-    if (SkinningLoot.end() == tab)return false;
-    else return true;
+    if (SkinningLoot.end() == tab)
+        return false;
+
+    return true;
 }
 
 //THIS should be cached
@@ -651,23 +657,7 @@ void LootRoll::Finalize()
     uint32 highest = 0;
     int8 hightype = -1;
     uint64 player = 0;
-    WorldPacket data(34);
-    /*
-    Player*  gplr = NULL;
-    for (std::map<uint64, uint32>::iterator itr = NeedRolls.begin(); itr != NeedRolls.end(); ++itr)
-    {
-    gplr = _mgr->GetPlayer((uint32)itr->first);
-    if (gplr) break;
-    }
-    if (!gplr)
-    {
-    for (std::map<uint64, uint32>::iterator itr = GreedRolls.begin(); itr != GreedRolls.end(); ++itr)
-    {
-    gplr = _mgr->GetPlayer((uint32)itr->first);
-    if (gplr) break;
-    }
-    }
-    */
+
     for (std::map<uint32, uint32>::iterator itr = m_NeedRolls.begin(); itr != m_NeedRolls.end(); ++itr)
     {
         if (itr->second > highest)
@@ -676,14 +666,6 @@ void LootRoll::Finalize()
             player = itr->first;
             hightype = NEED;
         }
-        /*
-        data.Initialize(SMSG_LOOT_ROLL);
-        data << _guid << _slotid << itr->first;
-        data << _itemid << _randomsuffixid << _randompropertyid;
-        data << uint8(itr->second) << uint8(NEED);
-        if (gplr && gplr->GetGroup())
-        gplr->GetGroup()->SendPacketToAll(&data);
-        */
     }
     if (!highest)
     {
@@ -695,18 +677,10 @@ void LootRoll::Finalize()
                 player = itr->first;
                 hightype = GREED;
             }
-            /*
-            data.Initialize(SMSG_LOOT_ROLL);
-            data << _guid << _slotid << itr->first;
-            data << _itemid << _randomsuffixid << _randompropertyid;
-            data << uint8(itr->second) << uint8(GREED);
-            if (gplr && gplr->GetGroup())
-            gplr->GetGroup()->SendPacketToAll(&data);
-            */
         }
     }
 
-    Loot* pLoot = 0;
+    Loot* pLoot = nullptr;
     WoWGuid wowGuid;
     wowGuid.Init(_guid);
 
@@ -728,17 +702,20 @@ void LootRoll::Finalize()
             }
         }
     }
+
     if (!pLoot)
     {
         delete this;
         return;
     }
+
     if (_slotid >= pLoot->items.size())
     {
         delete this;
         return;
     }
-    pLoot->items.at(_slotid).roll = NULL;
+
+    pLoot->items.at(_slotid).roll = nullptr;
     uint32 itemid = pLoot->items.at(_slotid).item.itemproto->ItemId;
     uint32 amt = pLoot->items.at(_slotid).iItemsCount;
     if (!amt)
@@ -747,51 +724,39 @@ void LootRoll::Finalize()
         return;
     }
 
-    Player* _player = (player) ? _mgr->GetPlayer((uint32)player) : 0;
+    Player* _player = (player) ? _mgr->GetPlayer((uint32)player) : nullptr;
     if (!player || !_player)
     {
         /* all passed */
-        data.Initialize(SMSG_LOOT_ALL_PASSED);
-        data << _guid;
-        data << _groupcount;
-        data << _itemid;
-        data << _randomsuffixid;
-        data << _randompropertyid;
         std::set<uint32>::iterator pitr = m_passRolls.begin();
-        while (_player == NULL && pitr != m_passRolls.end())
+        while (_player == nullptr && pitr != m_passRolls.end())
             _player = _mgr->GetPlayer((*(pitr++)));
-        if (_player != NULL)
+        if (_player != nullptr)
         {
             if (_player->InGroup())
-                _player->GetGroup()->SendPacketToAll(&data);
+                _player->GetGroup()->SendPacketToAll(SmsgLootAllPassed(_guid, _groupcount, _itemid, _randomsuffixid, _randompropertyid).serialise().get());
             else
-                _player->GetSession()->SendPacket(&data);
+                _player->GetSession()->SendPacket(SmsgLootAllPassed(_guid, _groupcount, _itemid, _randomsuffixid, _randompropertyid).serialise().get());
         }
+
         /* item can now be looted by anyone :) */
         pLoot->items.at(_slotid).passed = true;
         delete this;
         return;
     }
-    pLoot->items.at(_slotid).roll = 0;
-    data.Initialize(SMSG_LOOT_ROLL_WON);
-    data << _guid;
-    data << _slotid;
-    data << _itemid;
-    data << _randomsuffixid;
-    data << _randompropertyid;
-    data << _player->getGuid();
-    data << uint8(highest);
-    data << uint8(hightype);
+
+    pLoot->items.at(_slotid).roll = nullptr;
+
     if (_player->InGroup())
-        _player->GetGroup()->SendPacketToAll(&data);
+        _player->GetGroup()->SendPacketToAll(SmsgLootRollWon(_guid, _slotid, _itemid, _randomsuffixid, _randompropertyid, _player->getGuid(), highest, hightype).serialise().get());
     else
-        _player->GetSession()->SendPacket(&data);
+        _player->GetSession()->SendPacket(SmsgLootRollWon(_guid, _slotid, _itemid, _randomsuffixid, _randompropertyid, _player->getGuid(), highest, hightype).serialise().get());
 
     ItemProperties const* it = sMySQLStore.getItemProperties(itemid);
     int8 error;
     if ((error = _player->getItemInterface()->CanReceiveItem(it, 1)) != 0)
     {
-        _player->getItemInterface()->buildInventoryChangeError(NULL, NULL, error, itemid);
+        _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, error, itemid);
         return;
     }
 
@@ -801,7 +766,7 @@ void LootRoll::Finalize()
         SlotResult slotresult = _player->getItemInterface()->FindFreeInventorySlot(it);
         if (!slotresult.Result)
         {
-            _player->getItemInterface()->buildInventoryChangeError(NULL, NULL, INV_ERR_INVENTORY_FULL);
+            _player->getItemInterface()->buildInventoryChangeError(nullptr, nullptr, INV_ERR_INVENTORY_FULL);
             return;
         }
         LOG_DEBUG("AutoLootItem MISC");
@@ -809,14 +774,15 @@ void LootRoll::Finalize()
         Item* item = sObjectMgr.CreateItem(itemid, _player);
         if (item == nullptr)
             return;
+
         item->setStackCount(amt);
 
-        if (pLoot->items.at(_slotid).iRandomProperty != NULL)
+        if (pLoot->items.at(_slotid).iRandomProperty != nullptr)
         {
             item->setRandomPropertiesId(pLoot->items.at(_slotid).iRandomProperty->ID);
             item->ApplyRandomProperties(false);
         }
-        else if (pLoot->items.at(_slotid).iRandomSuffix != NULL)
+        else if (pLoot->items.at(_slotid).iRandomSuffix != nullptr)
         {
             item->SetRandomSuffix(pLoot->items.at(_slotid).iRandomSuffix->id);
             item->ApplyRandomProperties(false);
@@ -857,39 +823,29 @@ void LootRoll::PlayerRolled(Player* player, uint8 choice)
 {
     if (m_NeedRolls.find(player->getGuidLow()) != m_NeedRolls.end() || m_GreedRolls.find(player->getGuidLow()) != m_GreedRolls.end())
         return; // don't allow cheaters
+
     int roll = Util::getRandomUInt(99) + 1;
-    // create packet
-    WorldPacket data(34);
-    data.SetOpcode(SMSG_LOOT_ROLL);
-    data << _guid;
-    data << _slotid;
-    data << player->getGuid();
-    data << _itemid;
-    data << _randomsuffixid;
-    data << _randompropertyid;
+    uint8_t rollType = choice;
+
     if (choice == NEED)
     {
         m_NeedRolls.insert(std::make_pair(player->getGuidLow(), roll));
-        data << uint8(roll);
-        data << uint8(NEED);
     }
     else if (choice == GREED)
     {
         m_GreedRolls.insert(std::make_pair(player->getGuidLow(), roll));
-        data << uint8(roll);
-        data << uint8(GREED);
     }
     else
     {
         m_passRolls.insert(player->getGuidLow());
-        data << uint8(128);
-        data << uint8(128);
+        roll = 128;
+        rollType = 128;
     }
-    data << uint8(0); // Requires research - possibly related to disenchanting of loot
+
     if (player->InGroup())
-        player->GetGroup()->SendPacketToAll(&data);
+        player->GetGroup()->SendPacketToAll(SmsgLootRoll(_guid, _slotid, player->getGuid(), _itemid, _randomsuffixid, _randompropertyid, roll, rollType).serialise().get());
     else
-        player->GetSession()->SendPacket(&data);
+        player->GetSession()->SendPacket(SmsgLootRoll(_guid, _slotid, player->getGuid(), _itemid, _randomsuffixid, _randompropertyid, roll, rollType).serialise().get());
     // check for early completion
     if (!--_remaining)
     {
@@ -904,9 +860,7 @@ void LootMgr::FillItemLoot(Loot* loot, uint32 loot_id)
     loot->items.clear();
     loot->gold = 0;
     LootStore::iterator tab = ItemLoot.find(loot_id);
-    if (ItemLoot.end() == tab)
-        return;
-    else
+    if (ItemLoot.end() != tab)
         PushLoot(&tab->second, loot, false);
 }
 
