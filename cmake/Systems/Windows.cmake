@@ -2,10 +2,6 @@
 
 message(STATUS "Applying settings for Windows system")
 
-#find required libraries
-find_package(OpenSSL REQUIRED)
-find_package(MySQL REQUIRED)
-
 set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 
 #set default install prefix if it wasn't setted up

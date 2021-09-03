@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2021 AscEmu Team <http://www.ascemu.org>
 project(Ascemu)
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.21)
 
 # set runtime binary where all compiled (before install) binary will compiled in
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -21,9 +21,6 @@ if(UNIX)
         set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
     endif()
 endif()
-
-# set the correct macro directory path
-set(CMAKE_INSTALL_RPATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # cmake options
 include(${CMAKE_SOURCE_DIR}/cmake/Options.cmake)

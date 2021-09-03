@@ -14,6 +14,7 @@ if(WIN32)
 endif()
 
 # add our dependecies
+add_subdirectory(openssl)
 add_subdirectory(recastnavigation)
 add_subdirectory(g3dlite)
 add_subdirectory(utf8cpp)
