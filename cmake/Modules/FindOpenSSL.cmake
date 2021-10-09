@@ -556,18 +556,6 @@ foreach(_comp IN LISTS OpenSSL_FIND_COMPONENTS)
 endforeach()
 unset(_comp)
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(OpenSSL
-  REQUIRED_VARS
-    OPENSSL_CRYPTO_LIBRARY
-    OPENSSL_INCLUDE_DIR
-  VERSION_VAR
-    OPENSSL_VERSION
-  HANDLE_COMPONENTS
-  FAIL_MESSAGE
-    "Could NOT find OpenSSL, try to set the path to OpenSSL root folder in the system variable OPENSSL_ROOT_DIR"
-)
-
 mark_as_advanced(OPENSSL_INCLUDE_DIR)
 
 if(OPENSSL_FOUND)
