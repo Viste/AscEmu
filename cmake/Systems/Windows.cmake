@@ -11,12 +11,25 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 include(${CMAKE_SOURCE_DIR}/cmake/Modules/FindMySQL.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/Modules/FindOpenSSL.cmake)
+    
+if( OPENSSL_FOUND )
+    include_directories(${OPENSSL_INCLUDE_DIRS})
+    message(STATUS "Using OpenSSL ${OPENSSL_VERSION}")
+else()
+    message(FATAL_ERROR "Compiler is not supported")
+endif()
 
 # needed for socket stuff and crash handler
 set(EXTRA_LIBS 
     ${EXTRA_LIBS}
     ws2_32.lib
     dbghelp.lib
+)
+
+# install libmysql.dll required for our core to run.
+set(INSTALLED_DEPENDENCIES
+    ${MYSQL_DLL}
 )
 
 # check for db update files
