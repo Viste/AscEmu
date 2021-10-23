@@ -1,7 +1,7 @@
 # Copyright (c) 2014-2021 AscEmu Team <http://www.ascemu.org>
 project(Ascemu)
 
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.16)
 cmake_policy(SET CMP0057 NEW)
 
 # set runtime binary where all compiled (before install) binary will compiled in
